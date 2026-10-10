@@ -1,0 +1,24 @@
+# ── Delimitación de dueños por carpeta ──────────────────────────────
+# IMPORTANTE: reemplazar los nombres de usuario por los GitHub reales
+# de cada integrante del equipo antes del primer push.
+
+# Líder Técnico / Arquitecto — capa Modelo
+/backend/src/models/            @lider-tecnico
+/backend/src/config/            @lider-tecnico
+/backend/src/index.ts           @lider-tecnico
+/backend/src/app.ts             @lider-tecnico
+
+# Ingeniero de Software — capa Controlador
+/backend/src/controllers/       @ingeniero-software
+/backend/src/routes/            @ingeniero-software
+/backend/src/middlewares/       @ingeniero-software
+/backend/src/validators/        @ingeniero-software
+/backend/src/dto/               @ingeniero-software
+
+# Desarrollador Frontend & UX/QA — capa Vista
+/frontend/                      @desarrollador-frontend
+
+# Documentación y raíz del monorepo
+/docs/                          @lider-tecnico
+/README.md                      @lider-tecnico
+/.github/                       @lider-tecnico

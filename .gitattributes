@@ -1,0 +1,10 @@
+# Normaliza fin de línea a LF y encoding UTF-8 (evita conflictos en equipos Windows)
+* text=auto eol=lf
+
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
