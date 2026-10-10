@@ -4,7 +4,7 @@ Repositorio dedicado al desarrollo de una **plataforma web editorial multicanal*
 basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 
 > Monorepositorio con `/backend` (Node.js + Express + TypeScript) y
-> `/frontend` (React + TypeScript + Tailwind + Vite).
+> `/frontend` (React + TypeScript + Tailwind).
 
 ---
 
@@ -23,9 +23,9 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 
 | Capa | Carpeta | Rol responsable |
 |---|---|---|
-| **Modelo** | `backend/src/models/**` | **Líder Técnico / Arquitecto** |
-| **Controlador** | `backend/src/{controllers,routes,middlewares,validators}/**` | **Ingeniero de Software** |
-| **Vista** | `frontend/src/**` | **Desarrollador Frontend & UX/QA** |
+| **Modelo** | `backend/src/models/**` | **Javier** |
+| **Controlador** | `backend/src/{controllers,routes,middlewares,validators}/**` | **Pablo** |
+| **Vista** | `frontend/src/**` | **Maria** |
 
 ```
              ┌────────────────────────────┐
@@ -84,11 +84,11 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 
 ## 4. Guía por integrante (dónde trabajas y qué haces)
 
-### 👑 Líder Técnico / Arquitecto → **Modelo**
+### Javier → **Modelo**
 
-**Tu espacio de trabajo:** `backend/src/models/**` y `backend/src/config/database.ts`
+**Espacio de trabajo:** `backend/src/models/**` y `backend/src/config/database.ts`
 
-| Carpeta | Qué haces aquí |
+| Carpeta | Qué se hace |
 |---|---|
 | `models/entities/` | Defines las entidades TypeORM (decoradores, columnas, relaciones). |
 | `models/repositories/` | Escribes el acceso a datos (find, create, queries) por entidad. |
@@ -102,11 +102,11 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 
 ---
 
-### ⚙️ Ingeniero de Software → **Controlador**
+### Pablo → **Controlador**
 
 **Tu espacio de trabajo:** `backend/src/{controllers,routes,middlewares,validators}/**`
 
-| Carpeta | Qué haces aquí |
+| Carpeta | Qué se hace |
 |---|---|
 | `controllers/` | Orquestas cada request: validas, llamas al `service` del Modelo, respondes. |
 | `routes/` | Defines los endpoints Express y los conectas a los controladores. |
@@ -120,11 +120,11 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 
 ---
 
-### 🎨 Desarrollador Frontend & UX/QA → **Vista**
+### 🎨 Maria → **Vista**
 
 **Tu espacio de trabajo:** `frontend/src/**`
 
-| Carpeta | Qué haces aquí |
+| Carpeta | Qué se hace |
 |---|---|
 | `pages/` | Creas las páginas por ruta (Home, Catálogo, Login, etc.). |
 | `components/` | Construyes componentes reutilizables con Tailwind. |
@@ -181,7 +181,7 @@ npm run dev
 
 ---
 
-## 8. Flujo de trabajo en Git (para no pisarnos)
+## 8. Flujo de trabajo en Git
 
 1. **Nunca commitear directo a `main`.** Todo entra por **Pull Request**.
 2. Rama por capa: `feature/modelo/<desc>`, `feature/controlador/<desc>`, `feature/vista/<desc>`.
