@@ -96,10 +96,6 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 | `models/migrations/` | Generas y versionas las migraciones del esquema. |
 | `config/database.ts` | Mantienes el `DataSource` (conexión a SQL Server vía Tailscale). |
 
-**Reglas:**
-- El esquema se cambia **solo con migraciones** (`typeorm migration:run`), nunca a mano en SSMS.
-- El Controlador consume tus `services`, pero nadie más modifica `models/`.
-
 ---
 
 ### Pablo → **Controlador**
@@ -113,10 +109,6 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 | `middlewares/` | Implementas autenticación **JWT**, **RBAC**, manejo de errores, rate-limit. |
 | `validators/` | Creas los esquemas de validación de payloads (zod). |
 | `dto/` | Defines/actualizas los **contratos** de entrada y salida de la API. |
-
-**Reglas:**
-- No modificas `models/`: consumes sus `services` ya expuestos.
-- Cualquier cambio en `dto/` o `routes/` es un contrato: se avisa al Frontend y al Líder.
 
 ---
 
@@ -134,9 +126,6 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 | `router/` y `context/` | Defines rutas y estado global. |
 | `types/` | Reflejas los DTO del backend como tipos TS. |
 
-**Reglas:**
-- Consumes la API usando los contratos de `backend/src/dto/`, no inventes campos.
-- Ante un cambio de contrato, coordina con el Controlador antes de refactorizar.
 
 ---
 
@@ -184,16 +173,9 @@ npm run dev
 ## 8. Flujo de trabajo en Git
 
 1. **Nunca commitear directo a `main`.** Todo entra por **Pull Request**.
-2. Rama por capa: `feature/modelo/<desc>`, `feature/controlador/<desc>`, `feature/vista/<desc>`.
-3. `CODEOWNERS` asigna revisión automática según la carpeta que toques (reemplazar los usuarios de ejemplo).
-4. `.env` **no se versiona**: solo `.env.example` va al repo.
-5. Cambios de contrato (`dto/`, `routes/`, `types/`) se aprueban primero, antes de consumirlos.
-6. El esquema de BD cambia **solo vía migraciones** (regla del Modelo).
 
 ---
 
 ## 9. Convenciones rápidas
 
-- **Commits:** `tipo(capa): descripción` — ej. `feat(modelo): entidad Discount`, `fix(vista): responsive navbar`.
-- **TypeScript estricto** en ambos paquetes.
 - Detalles completos en [`docs/convenciones.md`](docs/convenciones.md).
