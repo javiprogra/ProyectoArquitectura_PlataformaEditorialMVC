@@ -53,7 +53,6 @@ CREATE TABLE [Usuario] (
 	[password] VARCHAR(255) NOT NULL,
 	[nombre] VARCHAR(100) NOT NULL,
 	[apellido] VARCHAR(100) NOT NULL,
-	[nit] VARCHAR(20),
 	[telefono] VARCHAR(255),
 	[direccion] VARCHAR(255),
 	PRIMARY KEY([id_usuario])
@@ -70,8 +69,9 @@ CREATE TABLE [Libro] (
 	[isbn] VARCHAR(50) NOT NULL UNIQUE,
 	[sinopsis] VARCHAR(3000),
 	[fecha_salida] DATE NOT NULL,
-	[precio_base] DECIMAL(10,2) NOT NULL,
 	[estado] BIT NOT NULL,
+	[id_imagen] INTEGER NOT NULL,
+	[precio_base] DECIMAL(10,2) NOT NULL,
 	PRIMARY KEY([id_libro])
 );
 GO
@@ -87,7 +87,6 @@ GO
 CREATE TABLE [Carrito] (
 	[id_carrito] INTEGER NOT NULL IDENTITY,
 	[id_usuario] INTEGER NOT NULL,
-	[fecha_actualizacion] DATETIME NOT NULL,
 	PRIMARY KEY([id_carrito])
 );
 GO
@@ -128,7 +127,7 @@ GO
 
 CREATE TABLE [Solicitud] (
 	[id_solicitud] INTEGER NOT NULL IDENTITY,
-	[id_usuario] INTEGER NOT NULL,
+	[id_cliente] INTEGER NOT NULL,
 	[id_libro] INTEGER NOT NULL,
 	[cantidad_estimada] INTEGER NOT NULL,
 	[acabado_portada] VARCHAR(100),
@@ -136,6 +135,7 @@ CREATE TABLE [Solicitud] (
 	[fecha_requerida_entrega] DATE NOT NULL,
 	[fecha_solicitud] DATETIME NOT NULL,
 	[estado] VARCHAR(50) NOT NULL,
+	[id_inventario] INTEGER NOT NULL,
 	PRIMARY KEY([id_solicitud])
 );
 GO
@@ -149,6 +149,7 @@ CREATE TABLE [Cotizacion] (
 	[total] DECIMAL(10,2) NOT NULL,
 	[estado] VARCHAR(50) NOT NULL,
 	[fecha] DATETIME NOT NULL,
+	[id_cliente] INTEGER NOT NULL,
 	PRIMARY KEY([id_cotizacion])
 );
 GO
@@ -162,15 +163,21 @@ CREATE TABLE [Imagen] (
 );
 GO
 
+CREATE TABLE [Cliente] (
+	[id_cliente] INTEGER NOT NULL IDENTITY,
+	[nombre] VARCHAR(150) NOT NULL,
+	[nit] VARCHAR(20),
+	[numero_telefono] VARCHAR(8) NOT NULL,
+	[direccion] VARCHAR(150),
+	[id_tipoCliente] INTEGER NOT NULL,
+	PRIMARY KEY([id_cliente])
+);
+GO
+
 
 ALTER TABLE [Usuario]
 ADD FOREIGN KEY([id_rol])
 REFERENCES [Rol]([id_rol])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Usuario]
-ADD FOREIGN KEY([id_tipoCliente])
-REFERENCES [TipoCliente]([id_tipoCliente])
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 GO
 ALTER TABLE [Libro]
@@ -224,11 +231,6 @@ REFERENCES [Libro]([id_libro])
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 GO
 ALTER TABLE [Solicitud]
-ADD FOREIGN KEY([id_usuario])
-REFERENCES [Usuario]([id_usuario])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Solicitud]
 ADD FOREIGN KEY([id_libro])
 REFERENCES [Libro]([id_libro])
 ON UPDATE NO ACTION ON DELETE NO ACTION;
@@ -243,13 +245,33 @@ ADD FOREIGN KEY([id_usuario])
 REFERENCES [Usuario]([id_usuario])
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 GO
-ALTER TABLE [Imagen]
-ADD FOREIGN KEY([id_libro])
-REFERENCES [Libro]([id_libro])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
 ALTER TABLE [Cotizacion]
 ADD FOREIGN KEY([id_solicitud])
 REFERENCES [Solicitud]([id_solicitud])
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+GO
+ALTER TABLE [Cliente]
+ADD FOREIGN KEY([id_tipoCliente])
+REFERENCES [TipoCliente]([id_tipoCliente])
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+GO
+ALTER TABLE [Libro]
+ADD FOREIGN KEY([id_imagen])
+REFERENCES [Imagen]([id_imagen])
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+GO
+ALTER TABLE [Solicitud]
+ADD FOREIGN KEY([id_cliente])
+REFERENCES [Cliente]([id_cliente])
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+GO
+ALTER TABLE [Solicitud]
+ADD FOREIGN KEY([id_inventario])
+REFERENCES [Inventario]([id_inventario])
+ON UPDATE NO ACTION ON DELETE NO ACTION;
+GO
+ALTER TABLE [Cotizacion]
+ADD FOREIGN KEY([id_cliente])
+REFERENCES [Cliente]([id_cliente])
 ON UPDATE NO ACTION ON DELETE NO ACTION;
 GO
