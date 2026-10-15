@@ -41,7 +41,6 @@ Table Usuario [headercolor: #175e7a] {
 	password varchar(255) [ not null ]
 	nombre varchar(100) [ not null ]
 	apellido varchar(100) [ not null ]
-	nit varchar(20)
 	telefono varchar(255)
 	direccion varchar(255)
 }
@@ -56,8 +55,9 @@ Table Libro [headercolor: #175e7a] {
 	isbn varchar(50) [ not null, unique ]
 	sinopsis varchar(3000)
 	fecha_salida date [ not null ]
-	precio_base decimal(10,2) [ not null ]
 	estado bit [ not null ]
+	id_imagen integer [ not null ]
+	precio_base decimal(10,2) [ not null ]
 }
 
 Table Inventario [headercolor: #175e7a] {
@@ -69,7 +69,6 @@ Table Inventario [headercolor: #175e7a] {
 Table Carrito [headercolor: #175e7a] {
 	id_carrito integer [ pk, increment, not null ]
 	id_usuario integer [ not null ]
-	fecha_actualizacion datetime [ not null ]
 }
 
 Table DetalleCarrito [headercolor: #175e7a] {
@@ -102,7 +101,7 @@ Table DetalleOrden [headercolor: #175e7a] {
 
 Table Solicitud [headercolor: #175e7a] {
 	id_solicitud integer [ pk, increment, not null ]
-	id_usuario integer [ not null ]
+	id_cliente integer [ not null ]
 	id_libro integer [ not null ]
 	cantidad_estimada integer [ not null ]
 	acabado_portada varchar(100)
@@ -110,6 +109,7 @@ Table Solicitud [headercolor: #175e7a] {
 	fecha_requerida_entrega date [ not null ]
 	fecha_solicitud datetime [ not null ]
 	estado varchar(50) [ not null ]
+	id_inventario integer [ not null ]
 }
 
 Table Cotizacion [headercolor: #175e7a] {
@@ -121,6 +121,7 @@ Table Cotizacion [headercolor: #175e7a] {
 	total decimal(10,2) [ not null ]
 	estado varchar(50) [ not null ]
 	fecha datetime [ not null ]
+	id_cliente integer [ not null ]
 }
 
 Table Imagen [headercolor: #175e7a] {
@@ -130,12 +131,17 @@ Table Imagen [headercolor: #175e7a] {
 	imagen_url varchar(500) [ not null ]
 }
 
-Ref fk_Usuario_id_rol_Rol {
-	Usuario.id_rol > Rol.id_rol [ delete: no action, update: no action ]
+Table Cliente [headercolor: #175e7a] {
+	id_cliente integer [ pk, increment, not null ]
+	nombre varchar(150) [ not null ]
+	nit varchar(20)
+	numero_telefono varchar(8) [ not null ]
+	direccion varchar(150)
+	id_tipoCliente integer [ not null ]
 }
 
-Ref fk_Usuario_id_tipoCliente_tipoCliente {
-	Usuario.id_tipoCliente > TipoCliente.id_tipoCliente [ delete: no action, update: no action ]
+Ref fk_Usuario_id_rol_Rol {
+	Usuario.id_rol > Rol.id_rol [ delete: no action, update: no action ]
 }
 
 Ref fk_Libro_id_categoria_Categoria {
@@ -178,10 +184,6 @@ Ref fk_detalleOrden_id_libro_Libro {
 	DetalleOrden.id_libro > Libro.id_libro [ delete: no action, update: no action ]
 }
 
-Ref fk_Solicitud_id_usuario_Usuario {
-	Solicitud.id_usuario > Usuario.id_usuario [ delete: no action, update: no action ]
-}
-
 Ref fk_Solicitud_id_libro_Libro {
 	Solicitud.id_libro > Libro.id_libro [ delete: no action, update: no action ]
 }
@@ -194,10 +196,26 @@ Ref fk_Orden_id_usuario_Usuario {
 	Orden.id_usuario > Usuario.id_usuario [ delete: no action, update: no action ]
 }
 
-Ref fk_Imagen_id_libro_Libro {
-	Imagen.id_libro > Libro.id_libro [ delete: no action, update: no action ]
-}
-
 Ref fk_Cotizacion_id_solicitud_Solicitud {
 	Cotizacion.id_solicitud > Solicitud.id_solicitud [ delete: no action, update: no action ]
+}
+
+Ref fk_Cliente_id_tipoCliente_TipoCliente {
+	Cliente.id_tipoCliente > TipoCliente.id_tipoCliente [ delete: no action, update: no action ]
+}
+
+Ref fk_Libro_id_imagen_Imagen {
+	Libro.id_imagen > Imagen.id_imagen [ delete: no action, update: no action ]
+}
+
+Ref fk_Solicitud_id_cliente_Cliente {
+	Solicitud.id_cliente > Cliente.id_cliente [ delete: no action, update: no action ]
+}
+
+Ref fk_Solicitud_id_inventario_Inventario {
+	Solicitud.id_inventario > Inventario.id_inventario [ delete: no action, update: no action ]
+}
+
+Ref fk_Cotizacion_id_cliente_Cliente {
+	Cotizacion.id_cliente > Cliente.id_cliente [ delete: no action, update: no action ]
 }
