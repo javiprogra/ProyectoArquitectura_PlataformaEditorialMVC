@@ -1,269 +1,159 @@
-CREATE TABLE [Rol] (
-	[id_rol] INTEGER NOT NULL IDENTITY,
-	[nombre] VARCHAR(50) NOT NULL,
-	PRIMARY KEY([id_rol])
+-- 1. Tablas independientes (Sin dependencias externas)
+CREATE TABLE rol (
+	id_rol SERIAL PRIMARY KEY,
+	nombre VARCHAR(50) NOT NULL
 );
-GO
 
-CREATE TABLE [Usuario] (
-	[id_usuario] INTEGER NOT NULL IDENTITY,
-	[id_rol] INTEGER NOT NULL,
-	[usuario] VARCHAR(100) NOT NULL UNIQUE,
-	[password] VARCHAR(255) NOT NULL,
-	[nombre] VARCHAR(100) NOT NULL,
-	[apellido] VARCHAR(100) NOT NULL,
-	[telefono] VARCHAR(255),
-	[direccion] VARCHAR(255),
-	PRIMARY KEY([id_usuario])
+CREATE TABLE tipo_cliente (
+	id_tipo_cliente SERIAL PRIMARY KEY,
+	tipo VARCHAR(50) NOT NULL,
+	descuento DECIMAL(10,2) NOT NULL
 );
-GO
 
-CREATE TABLE [Cliente] (
-	[id_cliente] INTEGER NOT NULL IDENTITY,
-	[id_tipoCliente] INTEGER,
-	[id_usuario] INTEGER NOT NULL,
-	[nit] VARCHAR(20),
-	[id_tipoCliente] INTEGER NOT NULL,
-	PRIMARY KEY([id_cliente])
+CREATE TABLE categoria (
+	id_categoria SERIAL PRIMARY KEY,
+	nombre VARCHAR(100) NOT NULL,
+	estado BOOLEAN NOT NULL
 );
-GO
 
-CREATE TABLE [TipoCliente] (
-	[id_tipoCliente] INTEGER NOT NULL IDENTITY,
-	[tipo] VARCHAR(50) NOT NULL,
-	[descuento] DECIMAL(10,2) NOT NULL,
-	PRIMARY KEY([id_tipoCliente])
+CREATE TABLE autor (
+	id_autor SERIAL PRIMARY KEY,
+	nombre VARCHAR(100) NOT NULL,
+	nacionalidad VARCHAR(100)
 );
-GO
 
-CREATE TABLE [Categoria] (
-	[id_categoria] INTEGER NOT NULL IDENTITY,
-	[nombre] VARCHAR(100) NOT NULL,
-	[estado] BIT NOT NULL,
-	PRIMARY KEY([id_categoria])
+CREATE TABLE editorial (
+	id_editorial SERIAL PRIMARY KEY,
+	nombre VARCHAR(150) NOT NULL,
+	telefono VARCHAR(20),
+	correo VARCHAR(150),
+	direccion VARCHAR(255)
 );
-GO
 
-CREATE TABLE [Autor] (
-	[id_autor] INTEGER NOT NULL IDENTITY,
-	[nombre] VARCHAR(100) NOT NULL,
-	[nacionalidad] VARCHAR(100),
-	PRIMARY KEY([id_autor])
+CREATE TABLE formato (
+	id_formato SERIAL PRIMARY KEY,
+	tipo VARCHAR(50) NOT NULL
 );
-GO
 
-CREATE TABLE [Editorial] (
-	[id_editorial] INTEGER NOT NULL IDENTITY,
-	[nombre] VARCHAR(150) NOT NULL,
-	[telefono] VARCHAR(20),
-	[correo] VARCHAR(150),
-	[direccion] VARCHAR(255),
-	PRIMARY KEY([id_editorial])
+-- 2. Tablas con dependencias de primer nivel
+CREATE TABLE usuario (
+	id_usuario SERIAL PRIMARY KEY,
+	id_rol INTEGER NOT NULL,
+	usuario VARCHAR(100) NOT NULL UNIQUE,
+	password VARCHAR(255) NOT NULL,
+	nombre VARCHAR(100) NOT NULL,
+	apellido VARCHAR(100) NOT NULL,
+	telefono VARCHAR(255),
+	direccion VARCHAR(255),
+	CONSTRAINT fk_usuario_rol FOREIGN KEY (id_rol) REFERENCES rol(id_rol)
 );
-GO
 
-CREATE TABLE [Formato] (
-	[id_formato] INTEGER NOT NULL IDENTITY,
-	[tipo] VARCHAR(50) NOT NULL,
-	PRIMARY KEY([id_formato])
+CREATE TABLE cliente (
+	id_cliente SERIAL PRIMARY KEY,
+	id_tipo_cliente INTEGER NOT NULL,
+	id_usuario INTEGER NOT NULL UNIQUE,
+	nit VARCHAR(20),
+	CONSTRAINT fk_cliente_tipo FOREIGN KEY (id_tipo_cliente) REFERENCES tipo_cliente(id_tipo_cliente),
+	CONSTRAINT fk_cliente_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 );
-GO
 
-CREATE TABLE [Libro] (
-	[id_libro] INTEGER NOT NULL IDENTITY,
-	[id_categoria] INTEGER NOT NULL,
-	[id_editorial] INTEGER NOT NULL,
-	[id_formato] INTEGER NOT NULL,
-	[id_autor] INTEGER,
-	[nombre] VARCHAR(200) NOT NULL,
-	[sinopsis] VARCHAR(3000),
-	[isbn] VARCHAR(50) NOT NULL UNIQUE,
-	[precio_base] DECIMAL(10,2) NOT NULL,
-	[estado] BIT NOT NULL,
-	PRIMARY KEY([id_libro])
+CREATE TABLE libro (
+	id_libro SERIAL PRIMARY KEY,
+	id_categoria INTEGER NOT NULL,
+	id_editorial INTEGER NOT NULL,
+	id_formato INTEGER NOT NULL,
+	id_autor INTEGER,
+	nombre VARCHAR(200) NOT NULL,
+	sinopsis VARCHAR(3000),
+	isbn VARCHAR(50) NOT NULL UNIQUE,
+	precio_base DECIMAL(10,2) NOT NULL,
+	estado BOOLEAN NOT NULL,
+	CONSTRAINT fk_libro_categoria FOREIGN KEY (id_categoria) REFERENCES categoria(id_categoria),
+	CONSTRAINT fk_libro_editorial FOREIGN KEY (id_editorial) REFERENCES editorial(id_editorial),
+	CONSTRAINT fk_libro_formato FOREIGN KEY (id_formato) REFERENCES formato(id_formato),
+	CONSTRAINT fk_libro_autor FOREIGN KEY (id_autor) REFERENCES autor(id_autor)
 );
-GO
 
-CREATE TABLE [Inventario] (
-	[id_inventario] INTEGER NOT NULL IDENTITY,
-	[id_libro] INTEGER NOT NULL,
-	[stock] INTEGER NOT NULL,
-	PRIMARY KEY([id_inventario])
+-- 3. Tablas transaccionales y de inventario
+CREATE TABLE inventario (
+	id_inventario SERIAL PRIMARY KEY,
+	id_libro INTEGER NOT NULL,
+	stock INTEGER NOT NULL,
+	CONSTRAINT fk_inventario_libro FOREIGN KEY (id_libro) REFERENCES libro(id_libro)
 );
-GO
 
-CREATE TABLE [Orden] (
-	[id_orden] INTEGER NOT NULL IDENTITY,
-	[id_cotizacion] INTEGER NOT NULL,
-	[id_usuario] INTEGER NOT NULL,
-	[subtotal_base] DECIMAL(10,2) NOT NULL,
-	[descuento_volumen] DECIMAL(10,2) NOT NULL,
-	[descuento_cliente] DECIMAL(10,2) NOT NULL,
-	[impuesto] DECIMAL(10,2) NOT NULL,
-	[total_final] DECIMAL(10,2) NOT NULL,
-	[estado] VARCHAR(50) NOT NULL,
-	[fecha] DATETIME NOT NULL,
-	PRIMARY KEY([id_orden])
+CREATE TABLE imagen (
+	id_imagen SERIAL PRIMARY KEY,
+	id_libro INTEGER NOT NULL,
+	nombre_imagen VARCHAR(150) NOT NULL,
+	imagen_url VARCHAR(500) NOT NULL,
+	CONSTRAINT fk_imagen_libro FOREIGN KEY (id_libro) REFERENCES libro(id_libro)
 );
-GO
 
-CREATE TABLE [DetalleOrden] (
-	[id_detalleOrden] INTEGER NOT NULL IDENTITY,
-	[id_orden] INTEGER NOT NULL,
-	[id_libro] INTEGER NOT NULL,
-	[cantidad] INTEGER NOT NULL,
-	[precio_unitario] DECIMAL(10,2) NOT NULL,
-	[subtotal_item] DECIMAL(10,2) NOT NULL,
-	PRIMARY KEY([id_detalleOrden])
+CREATE TABLE solicitud (
+	id_solicitud SERIAL PRIMARY KEY,
+	id_cliente INTEGER NOT NULL,
+	fecha_requerida_entrega DATE NOT NULL,
+	fecha_solicitud TIMESTAMP NOT NULL,
+	estado VARCHAR(50) NOT NULL,
+	CONSTRAINT fk_solicitud_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
 );
-GO
 
-CREATE TABLE [Solicitud] (
-	[id_solicitud] INTEGER NOT NULL IDENTITY,
-	[id_cliente] INTEGER NOT NULL,
-	[fecha_requerida_entrega] DATE NOT NULL,
-	[fecha_solicitud] DATETIME NOT NULL,
-	[estado] VARCHAR(50) NOT NULL,
-	PRIMARY KEY([id_solicitud])
+CREATE TABLE detalle_solicitud (
+	id_detalle_solicitud SERIAL PRIMARY KEY,
+	id_solicitud INTEGER NOT NULL,
+	id_libro INTEGER NOT NULL,
+	cantidad_estimada INTEGER NOT NULL,
+	acabado_portada VARCHAR(50),
+	tipo_papel VARCHAR(50),
+	CONSTRAINT fk_det_solicitud FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud),
+	CONSTRAINT fk_det_solicitud_libro FOREIGN KEY (id_libro) REFERENCES libro(id_libro)
 );
-GO
 
-CREATE TABLE [Cotizacion] (
-	[id_cotizacion] INTEGER NOT NULL IDENTITY,
-	[id_solicitud] INTEGER NOT NULL,
-	[subtotal] DECIMAL(10,2) NOT NULL,
-	[impuesto] DECIMAL(10,2) NOT NULL,
-	[total] DECIMAL(10,2) NOT NULL,
-	[estado] VARCHAR(50) NOT NULL,
-	[fecha] DATETIME NOT NULL,
-	PRIMARY KEY([id_cotizacion])
+CREATE TABLE cotizacion (
+	id_cotizacion SERIAL PRIMARY KEY,
+	id_solicitud INTEGER NOT NULL,
+	subtotal DECIMAL(10,2) NOT NULL,
+	impuesto DECIMAL(10,2) NOT NULL,
+	total DECIMAL(10,2) NOT NULL,
+	estado VARCHAR(50) NOT NULL,
+	fecha TIMESTAMP NOT NULL,
+	CONSTRAINT fk_cotizacion_solicitud FOREIGN KEY (id_solicitud) REFERENCES solicitud(id_solicitud)
 );
-GO
 
-CREATE TABLE [Imagen] (
-	[id_imagen] INTEGER NOT NULL IDENTITY,
-	[id_libro] INTEGER NOT NULL,
-	[nombre_imagen] VARCHAR(150) NOT NULL,
-	[imagen_url] VARCHAR(500) NOT NULL,
-	PRIMARY KEY([id_imagen])
+CREATE TABLE detalle_cotizacion (
+	id_detalle_cotizacion SERIAL PRIMARY KEY,
+	id_cotizacion INTEGER NOT NULL,
+	id_libro INTEGER NOT NULL,
+	cantidad INTEGER NOT NULL,
+	precio_unitario DECIMAL(10,2) NOT NULL,
+	subtotal_item DECIMAL(10,2) NOT NULL,
+	CONSTRAINT fk_det_cotizacion FOREIGN KEY (id_cotizacion) REFERENCES cotizacion(id_cotizacion),
+	CONSTRAINT fk_det_cotizacion_libro FOREIGN KEY (id_libro) REFERENCES libro(id_libro)
 );
-GO
 
-CREATE TABLE [DetalleCotizacion] (
-	[id_detalle_cotizacion] INTEGER NOT NULL IDENTITY,
-	[id_cotizacion] INTEGER NOT NULL,
-	[id_libro] INTEGER NOT NULL,
-	[cantidad] INTEGER NOT NULL,
-	[precio_unitario] DECIMAL(10,2) NOT NULL,
-	[subtotal_item] DECIMAL(10,2) NOT NULL,
-	PRIMARY KEY([id_detalle_cotizacion])
+CREATE TABLE orden (
+	id_orden SERIAL PRIMARY KEY,
+	id_cotizacion INTEGER NOT NULL,
+	id_usuario INTEGER NOT NULL,
+	subtotal_base DECIMAL(10,2) NOT NULL,
+	descuento_volumen DECIMAL(10,2) NOT NULL,
+	descuento_cliente DECIMAL(10,2) NOT NULL,
+	impuesto DECIMAL(10,2) NOT NULL,
+	total_final DECIMAL(10,2) NOT NULL,
+	estado VARCHAR(50) NOT NULL,
+	fecha TIMESTAMP NOT NULL,
+	CONSTRAINT fk_orden_cotizacion FOREIGN KEY (id_cotizacion) REFERENCES cotizacion(id_cotizacion),
+	CONSTRAINT fk_orden_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 );
-GO
 
-CREATE TABLE [DetalleSolicitud] (
-	[id_detalle_solicitud] INTEGER NOT NULL IDENTITY,
-	[id_solicitud] INTEGER NOT NULL,
-	[id_libro] INTEGER NOT NULL,
-	[cantidad_estimada] INTEGER NOT NULL,
-	[acabado_portada] VARCHAR(50),
-	[tipo_papel] VARCHAR(50),
-	PRIMARY KEY([id_detalle_solicitud])
+CREATE TABLE detalle_orden (
+	id_detalle_orden SERIAL PRIMARY KEY,
+	id_orden INTEGER NOT NULL,
+	id_libro INTEGER NOT NULL,
+	cantidad INTEGER NOT NULL,
+	precio_unitario DECIMAL(10,2) NOT NULL,
+	subtotal_item DECIMAL(10,2) NOT NULL,
+	CONSTRAINT fk_det_orden FOREIGN KEY (id_orden) REFERENCES orden(id_orden),
+	CONSTRAINT fk_det_orden_libro FOREIGN KEY (id_libro) REFERENCES libro(id_libro)
 );
-GO
-
-
-ALTER TABLE [Usuario]
-ADD FOREIGN KEY([id_rol])
-REFERENCES [Rol]([id_rol])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Usuario]
-ADD FOREIGN KEY([id_usuario])
-REFERENCES [Cliente]([id_usuario])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Cliente]
-ADD FOREIGN KEY([id_cliente])
-REFERENCES [Solicitud]([id_cliente])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Solicitud]
-ADD FOREIGN KEY([id_solicitud])
-REFERENCES [Cotizacion]([id_solicitud])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Usuario]
-ADD FOREIGN KEY([id_usuario])
-REFERENCES [Orden]([id_usuario])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Cotizacion]
-ADD FOREIGN KEY([id_cotizacion])
-REFERENCES [Orden]([id_cotizacion])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Cotizacion]
-ADD FOREIGN KEY([id_cotizacion])
-REFERENCES [DetalleCotizacion]([id_cotizacion])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Solicitud]
-ADD FOREIGN KEY([id_solicitud])
-REFERENCES [DetalleSolicitud]([id_solicitud])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Orden]
-ADD FOREIGN KEY([id_orden])
-REFERENCES [DetalleOrden]([id_orden])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Categoria]
-ADD FOREIGN KEY([id_categoria])
-REFERENCES [Libro]([id_categoria])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Editorial]
-ADD FOREIGN KEY([id_editorial])
-REFERENCES [Libro]([id_editorial])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Formato]
-ADD FOREIGN KEY([id_formato])
-REFERENCES [Libro]([id_formato])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Libro]
-ADD FOREIGN KEY([id_libro])
-REFERENCES [DetalleSolicitud]([id_libro])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Libro]
-ADD FOREIGN KEY([id_libro])
-REFERENCES [DetalleOrden]([id_libro])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Libro]
-ADD FOREIGN KEY([id_libro])
-REFERENCES [Inventario]([id_libro])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Libro]
-ADD FOREIGN KEY([id_libro])
-REFERENCES [Imagen]([id_libro])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Libro]
-ADD FOREIGN KEY([id_autor])
-REFERENCES [Autor]([id_autor])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [Libro]
-ADD FOREIGN KEY([id_libro])
-REFERENCES [DetalleCotizacion]([id_libro])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO
-ALTER TABLE [TipoCliente]
-ADD FOREIGN KEY([id_tipoCliente])
-REFERENCES [Cliente]([id_tipoCliente])
-ON UPDATE NO ACTION ON DELETE NO ACTION;
-GO

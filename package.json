@@ -15,9 +15,15 @@
     "typecheck": "npm run typecheck --workspace backend && npm run typecheck --workspace frontend"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
     "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.118.0",
+    "dotenv": "^18.0.9"
   }
 }
