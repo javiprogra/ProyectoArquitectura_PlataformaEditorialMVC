@@ -14,8 +14,8 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 |---|---|
 | **Vista** | React, TypeScript, Tailwind CSS, Vite |
 | **Controlador y Modelo** | Node.js, Express, TypeScript |
-| **Base de datos** | Microsoft SQL Server (SSMS) vía **TypeORM** (`mssql`) |
-| **Acceso compartido a BD** | Red **Tailscale** (todos vemos la misma instancia) |
+| **Base de datos** | PostgreSQL (Supabase) vía **TypeORM** (`pg`) |
+| **Acceso compartido a BD** | Instancia de **Supabase** en la nube (todos vemos la misma BD) |
 
 ---
 
@@ -38,12 +38,12 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
              └──────────────┬─────────────┘
                             │ services/repos
              ┌──────────────▼─────────────┐
-             │  MODELO (TypeORM + mssql)  │  → Líder Técnico
+             │  MODELO (TypeORM + Postgres) │  → Líder Técnico
              │  entidades · reglas · SQL  │
              └──────────────┬─────────────┘
                             │
              ┌──────────────▼─────────────┐
-             │  SQL Server (SSMS/Tailscale)│
+             │  PostgreSQL (Supabase)       │
              └────────────────────────────┘
 ```
 
@@ -94,10 +94,10 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 | `models/repositories/` | Escribes el acceso a datos (find, create, queries) por entidad. |
 | `models/services/` | Implementas la lógica de negocio y el **motor de descuentos/reglas**. |
 | `models/migrations/` | Generas y versionas las migraciones del esquema. |
-| `config/database.ts` | Mantienes el `DataSource` (conexión a SQL Server vía Tailscale). |
+| `config/database.ts` | Mantienes el `DataSource` (conexión a PostgreSQL/Supabase). |
 
 **Reglas:**
-- El esquema se cambia **solo con migraciones** (`typeorm migration:run`), nunca a mano en SSMS.
+- El esquema se cambia **solo con migraciones** (`typeorm migration:run`) o con los scripts de `db/`, nunca a mano en el SQL Editor.
 - El Controlador consume tus `services`, pero nadie más modifica `models/`.
 
 ---
@@ -144,8 +144,8 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 
 - [Node.js](https://nodejs.org/) **v20+** y npm.
 - [Git](https://git-scm.com/).
-- **SQL Server** accesible vía **Tailscale** (el Líder entrega host/IP, puerto y credenciales).
-- **SSMS** para inspeccionar datos (no para alterar el esquema).
+- Proyecto de **Supabase** (PostgreSQL) con la URL de conexión y credenciales (las entrega el Líder).
+- **SQL Editor de Supabase** para inspeccionar datos y ejecutar los scripts de `db/` (no para alterar el esquema a mano).
 
 ---
 
@@ -160,7 +160,7 @@ cd ProyectoArquitectura_PlataformaEditorialMVC
 npm install
 
 # 3. Variables de entorno
-cp backend/.env.example backend/.env     # edita DB_HOST (IP Tailscale), DB_USER, etc.
+cp backend/.env.example backend/.env     # edita DATABASE_URL, JWT_SECRET, etc.
 cp frontend/.env.example frontend/.env   # edita VITE_API_URL
 
 # 4. Levantar en desarrollo (ambos a la vez)
@@ -176,7 +176,7 @@ npm run dev
 | `npm run dev` | Levanta backend + frontend en paralelo (workspace raíz). |
 | `npm run build` | Compila backend y frontend. |
 | `npm run typecheck` | Verifica tipos en ambos paquetes. |
-| `npm run migration:run` | (en `backend/`) aplica las migraciones de TypeORM a SQL Server. |
+| `npm run migration:run` | (en `backend/`) aplica las migraciones de TypeORM a PostgreSQL. |
 | `npm run migration:generate` | (en `backend/`) genera una migración a partir de cambios en entidades. |
 
 ---
