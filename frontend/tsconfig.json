@@ -14,7 +14,7 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
-    "baseUrl": ".",
+    //"baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     }
