@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { mockService, Book } from '../services/mockService';
-import logoLumina from '../assets/logo.png';
+import { EditorialHeader } from '../components/EditorialHeader';
+import { EditorialFooter } from '../components/EditorialFooter';
 
 export default function Catalog() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -29,25 +30,7 @@ export default function Catalog() {
     <div className="min-h-screen bg-editorial-light text-editorial-dark">
       
       {/* 1. Header Institucional con el estilo Beige */}
-      <header className="bg-editorial-beige text-editorial-primary shadow-md">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <img src={logoLumina} alt="LUMINA Logo" className="h-20 w-20 object-contain" />
-            <span className="text-xs uppercase tracking-widest bg-editorial-primary text-white px-2 py-1 rounded">Editorial</span>
-          </div>
-          <nav className="space-x-6 hidden md:flex font-medium">
-            <Link to="/" className="hover:opacity-75 transition">Inicio</Link>
-            <Link to="/catalog" className="hover:opacity-75 transition font-bold underline">Catálogo</Link>
-            <Link to="/custom-order" className="hover:opacity-75 transition">Cotizaciones Institucionales</Link>
-            <Link to="/cart" className="hover:opacity-75 transition">Carrito</Link>
-          </nav>
-          <div>
-            <Link to="/login" className="bg-editorial-primary text-white font-semibold px-4 py-2 rounded shadow hover:bg-opacity-90 transition">
-              Iniciar Sesión
-            </Link>
-          </div>
-        </div>
-      </header>
+      <EditorialHeader />
 
       {/* 2. Cabecera de la Sección */}
       <section className="bg-gradient-to-r from-editorial-primary to-[#1B4D3E] text-white py-12 px-4 text-center">
@@ -155,9 +138,7 @@ export default function Catalog() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-editorial-dark text-gray-400 py-8 text-center border-t border-gray-800 mt-16">
-        <p className="text-sm">&copy; 2026 LUMINA Editorial. Todos los derechos reservados.</p>
-      </footer>
+      <EditorialFooter />
 
     </div>
   );

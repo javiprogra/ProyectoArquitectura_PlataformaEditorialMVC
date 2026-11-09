@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { mockService, Book } from '../services/mockService';
-import logoLumina from '../assets/logo.png';
+import { EditorialHeader } from '../components/EditorialHeader';
+import { EditorialFooter } from '../components/EditorialFooter';
 
 export default function Inicio() {
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
@@ -20,33 +21,8 @@ export default function Inicio() {
   return (
     <div className="min-h-screen bg-editorial-light text-editorial-dark">
       
- {/* 1. Header / Barra de Navegación Rápida */}
-<header className="bg-editorial-beige text-editorial-primary shadow-md">
-  <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-    
-    {/* Logo y Nombre */}
-    <div className="flex items-center space-x-2">
-      <img src={logoLumina} alt="LUMINA Logo" className="h-20 w-20 object-contain" />
-      <span className="text-xs uppercase tracking-widest bg-editorial-primary text-white px-2 py-1 rounded">Editorial</span>
-    </div>
-
-    {/* Enlaces de Navegación (ahora con texto oscuro para que contrasten bien con el fondo beige) */}
-    <nav className="space-x-6 hidden md:flex font-medium">
-      <Link to="/" className="hover:opacity-75 transition">Inicio</Link>
-      <Link to="/catalog" className="hover:opacity-75 transition">Catálogo</Link>
-      <Link to="/custom-order" className="hover:opacity-75 transition">Cotizaciones Institucionales</Link>
-      <Link to="/cart" className="hover:opacity-75 transition">Carrito</Link>
-    </nav>
-
-    {/* Botón de Iniciar Sesión */}
-    <div>
-      <Link to="/login" className="bg-editorial-primary text-white font-semibold px-4 py-2 rounded shadow hover:bg-opacity-90 transition">
-        Iniciar Sesión
-      </Link>
-    </div>
-
-  </div>
-</header>
+      {/* 1. Header / Barra de Navegación Rápida */}
+      <EditorialHeader />
       <section className="bg-gradient-to-r from-editorial-primary to-editorial-secondary text-white py-16 px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
@@ -117,12 +93,7 @@ export default function Inicio() {
       </section>
 
       {/* 4. Footer Institucional */}
-      <footer className="bg-editorial-dark text-gray-400 py-8 text-center border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <p className="text-sm">&copy; 2026 LUMINA Editorial. Todos los derechos reservados.</p>
-          <p className="text-xs text-gray-500 mt-2">Sistema desarrollado bajo Arquitectura MVC - Proyecto Final.</p>
-        </div>
-      </footer>
+      <EditorialFooter />
 
     </div>
   );
