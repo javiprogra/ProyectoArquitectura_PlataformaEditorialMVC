@@ -7,9 +7,9 @@ const PORT = env.PORT;
 
 AppDataSource.initialize()
   .then(() => {
-    console.log('✅ Conexión a SQL Server establecida.');
-    app.listen(PORT, () => {
-      console.log(`✅ Backend corriendo en http://localhost:${PORT}`);
+    console.log('✅ Conexión a PostgreSQL (Supabase) establecida.');
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`✅ Backend corriendo en http://127.0.0.1:${PORT}`);
     });
   })
   .catch((error) => {
