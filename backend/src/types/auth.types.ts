@@ -52,7 +52,11 @@ export interface JwtPayload {
 export interface RegisterInput {
   email: string;
   password: string;
-  name: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  phone?: string;
+  address?: string;
   role: 'retail_client' | 'institutional_client';
 }
 

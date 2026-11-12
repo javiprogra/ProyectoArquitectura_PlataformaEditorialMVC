@@ -6,7 +6,10 @@ import logoLumina from '../assets/logo.png';
 
 export default function Register() {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'retail_client' | 'institutional_client'>('retail_client');
@@ -18,7 +21,15 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await api.post('/auth/register', { name, email, password, role });
+      await api.post('/auth/register', {
+        firstName,
+        lastName,
+        phone,
+        address,
+        email,
+        password,
+        role,
+      });
       navigate('/login');
     } catch (err) {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
@@ -42,7 +53,7 @@ export default function Register() {
         &larr; Volver al inicio
       </Link>
 
-      <div className="relative z-10 bg-white w-full max-w-md mx-4 p-8 md:p-10 rounded-xl shadow-2xl border border-gray-100 my-8">
+      <div className="relative z-10 bg-white w-full max-w-lg mx-4 p-8 md:p-10 rounded-xl shadow-2xl border border-gray-100 my-8">
         <div className="flex flex-col items-center mb-6 text-center">
           <span className="font-serif italic text-gray-700 tracking-widest text-sm mb-1 uppercase">
             Únete a
@@ -52,18 +63,29 @@ export default function Register() {
         </div>
 
         <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">
-              Nombre Completo / Razón Social
-            </label>
-            <input
-              type="text"
-              placeholder="Ej. Juan Pérez / Universidad Mesoamericana"
-              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre</label>
+              <input
+                type="text"
+                placeholder="Ej. Juan"
+                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">Apellido</label>
+              <input
+                type="text"
+                placeholder="Ej. Pérez"
+                className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </div>
           </div>
 
           <div>
@@ -75,6 +97,28 @@ export default function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Teléfono</label>
+            <input
+              type="tel"
+              placeholder="Ej. 5555-5555"
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">Dirección</label>
+            <input
+              type="text"
+              placeholder="Ej. Zona 1, Ciudad de Guatemala"
+              className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
             />
           </div>
 
@@ -128,7 +172,7 @@ export default function Register() {
         <div className="mt-6 border-t border-gray-100 pt-4 text-center">
           <p className="text-xs text-gray-500">
             ¿Ya tienes una cuenta?{' '}
-            <Link to="/login" className="text-editorial-secondary font-bold hover:underline">
+            <Link to="/login" className="text-editorial-primary font-bold hover:underline">
               Inicia sesión aquí
             </Link>
           </p>

@@ -20,13 +20,22 @@ export class AuthService {
 
   async register(input: RegisterInput): Promise<RegisterResponseDto> {
     const passwordHash = await hashPassword(input.password);
-    const [nombre, ...rest] = input.name.trim().split(/\s+/);
-    const apellido = rest.join(' ');
+    let nombre = input.firstName?.trim() ?? '';
+    let apellido = input.lastName?.trim() ?? '';
+    if ((!nombre || !apellido) && input.name) {
+      const [first, ...rest] = input.name.trim().split(/\s+/);
+      nombre = nombre || first || '';
+      apellido = apellido || rest.join(' ');
+    }
+    const telefono = input.phone?.trim() || null;
+    const direccion = input.address?.trim() || null;
     const result = await this.repo.createUserClient({
       usuario: input.email,
       password_hash: passwordHash,
       nombre,
       apellido,
+      telefono,
+      direccion,
       id_rol: ROLE_TO_ROL_ID[input.role],
       id_tipo_cliente: ROLE_TO_TIPO[input.role],
     });
