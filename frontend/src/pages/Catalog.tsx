@@ -1,8 +1,7 @@
 // src/pages/Catalog.tsx
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { mockService } from '../services/mockService';
-import type { Book } from '../services/mockService';
+import { mockService, Book } from '../services/mockService';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
 
@@ -10,7 +9,7 @@ export default function Catalog() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
+  
   // Estados para los filtros (RF-01.2)
   const [search, setSearch] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('todos');
@@ -21,24 +20,20 @@ export default function Catalog() {
     setLoading(true);
     setError('');
 
-    mockService
-      .getBooks({
-        search,
-        genre: selectedGenre,
-        format: selectedFormat,
-      })
-      .then((data) => {
-        if (active) setBooks(data);
-      })
-      .catch(() => {
-        if (active) {
-          setBooks([]);
-          setError('No fue posible cargar el catálogo. Verifica que el backend esté disponible.');
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    mockService.getBooks({ 
+      search, 
+      genre: selectedGenre, 
+      format: selectedFormat 
+    }).then(data => {
+      if (active) setBooks(data);
+    }).catch(() => {
+      if (active) {
+        setBooks([]);
+        setError('No fue posible cargar el catálogo. Verifica que el backend esté disponible.');
+      }
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
 
     return () => {
       active = false;
@@ -46,7 +41,9 @@ export default function Catalog() {
   }, [search, selectedGenre, selectedFormat]);
 
   return (
+    
     <div className="min-h-screen bg-editorial-light text-editorial-dark">
+      
       {/* 1. Header Institucional con el estilo Beige */}
       <EditorialHeader />
 
@@ -61,22 +58,23 @@ export default function Catalog() {
       {/* 3. RF-01.2: Panel de Búsqueda y Filtros Combinables */}
       <section className="max-w-7xl mx-auto px-4 py-8">
         <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          
           {/* Buscador por Título, Autor o ISBN */}
           <div>
             <label className="block text-sm font-semibold text-editorial-primary mb-1">Buscador en tiempo real</label>
-            <input
-              type="text"
-              placeholder="Buscar por título, autor o ISBN..."
+            <input 
+              type="text" 
+              placeholder="Buscar por título, autor o ISBN..." 
               className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-editorial-primary"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-            />
+          />
           </div>
 
           {/* Filtro por Género */}
           <div>
             <label className="block text-sm font-semibold text-editorial-primary mb-1">Género Literario / Académico</label>
-            <select
+            <select 
               className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-editorial-primary bg-white"
               value={selectedGenre}
               onChange={(e) => setSelectedGenre(e.target.value)}
@@ -94,7 +92,7 @@ export default function Catalog() {
           {/* Filtro por Formato (Tapa blanda, dura, e-book) */}
           <div>
             <label className="block text-sm font-semibold text-editorial-primary mb-1">Formato</label>
-            <select
+            <select 
               className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-editorial-primary bg-white"
               value={selectedFormat}
               onChange={(e) => setSelectedFormat(e.target.value)}
@@ -105,6 +103,7 @@ export default function Catalog() {
               <option value="e-book">E-book</option>
             </select>
           </div>
+
         </div>
 
         {/* 4. Listado de Libros */}
@@ -120,18 +119,11 @@ export default function Catalog() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {books.map((book) => (
-              <div
-                key={book.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition flex flex-col justify-between"
-              >
+            {books.map(book => (
+              <div key={book.id} className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200 hover:shadow-xl transition flex flex-col justify-between">
                 <div>
                   <div className="relative h-60 overflow-hidden bg-gray-100">
-                    <img
-                      src={book.coverImage}
-                      alt={book.title}
-                      className="w-full h-full object-cover hover:scale-105 transition duration-300"
-                    />
+                    <img src={book.coverImage} alt={book.title} className="w-full h-full object-cover hover:scale-105 transition duration-300" />
                     <span className="absolute top-2 right-2 bg-editorial-primary text-white text-xs px-2.5 py-1 rounded-full uppercase font-medium">
                       {book.format}
                     </span>
@@ -151,7 +143,7 @@ export default function Catalog() {
                     <span className="text-xs text-gray-400 block">Precio base</span>
                     <span className="font-bold text-editorial-secondary text-lg">Q {book.price.toFixed(2)}</span>
                   </div>
-                  <Link
+                  <Link 
                     to={`/books/${book.id}`}
                     className="bg-editorial-primary text-white text-sm px-4 py-2 rounded-lg hover:bg-editorial-secondary transition shadow"
                   >
@@ -166,6 +158,7 @@ export default function Catalog() {
 
       {/* Footer */}
       <EditorialFooter />
+
     </div>
   );
 }
