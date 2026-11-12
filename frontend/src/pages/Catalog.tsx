@@ -8,6 +8,7 @@ import { EditorialFooter } from '../components/EditorialFooter';
 export default function Catalog() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
   // Estados para los filtros (RF-01.2)
   const [search, setSearch] = useState('');
@@ -15,15 +16,28 @@ export default function Catalog() {
   const [selectedFormat, setSelectedFormat] = useState('todos');
 
   useEffect(() => {
-    // TODO: Conectar con el endpoint GET /api/books del Backend
+    let active = true;
+    setLoading(true);
+    setError('');
+
     mockService.getBooks({ 
       search, 
       genre: selectedGenre, 
       format: selectedFormat 
     }).then(data => {
-      setBooks(data);
-      setLoading(false);
+      if (active) setBooks(data);
+    }).catch(() => {
+      if (active) {
+        setBooks([]);
+        setError('No fue posible cargar el catálogo. Verifica que el backend esté disponible.');
+      }
+    }).finally(() => {
+      if (active) setLoading(false);
     });
+
+    return () => {
+      active = false;
+    };
   }, [search, selectedGenre, selectedFormat]);
 
   return (
@@ -53,7 +67,7 @@ export default function Catalog() {
               className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-editorial-primary"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-            />
+          >
           </div>
 
           {/* Filtro por Género */}
@@ -94,6 +108,10 @@ export default function Catalog() {
         {/* 4. Listado de Libros */}
         {loading ? (
           <div className="text-center py-20 text-gray-500">Cargando obras del catálogo...</div>
+        ) : error ? (
+          <div className="text-center py-20 bg-red-50 rounded-xl shadow border border-red-200">
+            <p className="text-lg text-red-700">{error}</p>
+          </div>
         ) : books.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-xl shadow border border-gray-200">
             <p className="text-lg text-gray-600">No se encontraron publicaciones con los filtros seleccionados.</p>

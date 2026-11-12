@@ -82,14 +82,23 @@ export default function AdvisorDashboard() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    // TODO: Conectar con el Controlador/Backend → GET /api/custom-orders | GET /api/quotes
-    const [requestsData, quotesData] = await Promise.all([
-      mockService.getCustomOrders(),
-      mockService.getQuotes(),
-    ]);
-    setRequests(requestsData);
-    setQuotes(quotesData);
-    setLoading(false);
+    try {
+      const [requestsData, quotesData] = await Promise.all([
+        mockService.getCustomOrders(),
+        mockService.getQuotes(),
+      ]);
+      setRequests(requestsData);
+      setQuotes(quotesData);
+    } catch {
+      setRequests([]);
+      setQuotes([]);
+      setNotice({
+        type: 'error',
+        message: 'No fue posible cargar la bandeja comercial. Intenta nuevamente.',
+      });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {

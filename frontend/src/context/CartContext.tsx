@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { isAuthenticatedClient } from '../utils/session';
 
 export interface CartItem {
   bookId: number;
@@ -20,6 +21,7 @@ const STORAGE_KEY = 'lumina_cart';
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 
 const loadCart = (): CartItem[] => {
+  if (!isAuthenticatedClient()) return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
@@ -50,6 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [items]);
 
   const addItem = useCallback((bookId: number, quantity = 1) => {
+    if (!isAuthenticatedClient()) return;
     const safeQuantity = Math.max(1, Math.floor(quantity));
     setItems((previous) => {
       const existing = previous.find((item) => item.bookId === bookId);

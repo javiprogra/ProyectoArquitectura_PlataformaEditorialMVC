@@ -14,7 +14,7 @@ const linkClass = (active: boolean): string =>
   `transition hover:opacity-75 ${active ? 'font-bold underline underline-offset-4' : ''}`;
 
 export function EditorialHeader() {
-  const { totalItems } = useCart();
+  const { totalItems, clearCart } = useCart();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const user = getCurrentUser();
@@ -28,9 +28,14 @@ export function EditorialHeader() {
   const navItems: NavItem[] = [
     { to: '/', label: 'Inicio', active: pathname === '/' },
     { to: '/catalog', label: 'Catálogo', active: isCatalog },
-    { to: '/custom-order', label: 'Cotizaciones', active: isCustomOrder },
-    { to: '/cart', label: 'Carrito', active: isCart, badge: totalItems },
   ];
+
+  if (user?.role === 'retail_client' || user?.role === 'institutional_client') {
+    navItems.push(
+      { to: '/custom-order', label: 'Cotizaciones', active: isCustomOrder },
+      { to: '/cart', label: 'Carrito', active: isCart, badge: totalItems },
+    );
+  }
 
   if (user?.role === 'admin') {
     navItems.push({ to: '/admin/books', label: 'Administración', active: isAdmin });
@@ -40,6 +45,7 @@ export function EditorialHeader() {
   }
 
   const handleLogout = () => {
+    clearCart();
     clearSession();
     navigate('/');
   };

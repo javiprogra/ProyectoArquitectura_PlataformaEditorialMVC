@@ -4,8 +4,10 @@ import { Link } from 'react-router-dom';
 import { mockService, Book } from '../services/mockService';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
+import { isAuthenticatedClient } from '../utils/session';
 
 export default function Inicio() {
+  const canRequestQuote = isAuthenticatedClient();
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,10 +41,10 @@ export default function Inicio() {
               Explorar Catálogo
             </Link>
             <Link 
-              to="/custom-order" 
+              to={canRequestQuote ? '/custom-order' : '/login'}
               className="bg-transparent border-2 border-white text-white font-bold px-6 py-3 rounded-lg hover:bg-white hover:text-editorial-primary transition"
             >
-              Solicitar Cotización Mayorista
+              {canRequestQuote ? 'Solicitar Cotización Mayorista' : 'Inicia sesión para solicitar'}
             </Link>
           </div>
         </div>

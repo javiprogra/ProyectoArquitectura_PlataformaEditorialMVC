@@ -7,11 +7,13 @@ import { useCart } from '../context/CartContext';
 import { mockService } from '../services/mockService';
 import type { Book } from '../services/mockService';
 import { formatQ } from '../utils/format';
+import { isAuthenticatedClient } from '../utils/session';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const bookId = Number(id);
   const { addItem } = useCart();
+  const canBuy = isAuthenticatedClient();
 
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function BookDetail() {
   const maxQuantity = book ? Math.max(book.stock, 1) : 1;
 
   const handleAddToCart = () => {
-    if (!book || book.stock === 0) return;
+    if (!canBuy || !book || book.stock === 0) return;
     const safeQuantity = Math.min(quantity, book.stock);
     addItem(book.id, safeQuantity);
     setFeedback(`Se agregaron ${safeQuantity} unidad(es) de "${book.title}" al carrito.`);
@@ -199,55 +201,66 @@ export default function BookDetail() {
                 </div>
 
                 <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div className="flex items-center rounded-lg border border-gray-300 overflow-hidden w-fit">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                      disabled={quantity <= 1 || book.stock === 0}
-                      className="px-4 py-2.5 text-lg font-bold text-editorial-primary hover:bg-editorial-beige disabled:opacity-40 transition"
-                      aria-label="Disminuir cantidad"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min={1}
-                      max={maxQuantity}
-                      value={quantity}
-                      disabled={book.stock === 0}
-                      onChange={(event) => {
-                        const nextValue = Number(event.target.value);
-                        if (Number.isNaN(nextValue)) return;
-                        setQuantity(Math.max(1, Math.min(nextValue, maxQuantity)));
-                      }}
-                      className="w-16 text-center py-2.5 border-x border-gray-200 focus:outline-none disabled:bg-gray-50"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setQuantity((current) => Math.min(maxQuantity, current + 1))}
-                      disabled={quantity >= maxQuantity || book.stock === 0}
-                      className="px-4 py-2.5 text-lg font-bold text-editorial-primary hover:bg-editorial-beige disabled:opacity-40 transition"
-                      aria-label="Aumentar cantidad"
-                    >
-                      +
-                    </button>
-                  </div>
+                  {canBuy ? (
+                    <>
+                      <div className="flex items-center rounded-lg border border-gray-300 overflow-hidden w-fit">
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                          disabled={quantity <= 1 || book.stock === 0}
+                          className="px-4 py-2.5 text-lg font-bold text-editorial-primary hover:bg-editorial-beige disabled:opacity-40 transition"
+                          aria-label="Disminuir cantidad"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={maxQuantity}
+                          value={quantity}
+                          disabled={book.stock === 0}
+                          onChange={(event) => {
+                            const nextValue = Number(event.target.value);
+                            if (Number.isNaN(nextValue)) return;
+                            setQuantity(Math.max(1, Math.min(nextValue, maxQuantity)));
+                          }}
+                          className="w-16 text-center py-2.5 border-x border-gray-200 focus:outline-none disabled:bg-gray-50"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((current) => Math.min(maxQuantity, current + 1))}
+                          disabled={quantity >= maxQuantity || book.stock === 0}
+                          className="px-4 py-2.5 text-lg font-bold text-editorial-primary hover:bg-editorial-beige disabled:opacity-40 transition"
+                          aria-label="Aumentar cantidad"
+                        >
+                          +
+                        </button>
+                      </div>
 
-                  <button
-                    type="button"
-                    onClick={handleAddToCart}
-                    disabled={book.stock === 0}
-                    className="bg-editorial-primary text-white font-bold px-6 py-3 rounded-lg shadow hover:bg-editorial-secondary transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  >
-                    {book.stock === 0 ? 'Sin stock disponible' : 'Agregar al carrito'}
-                  </button>
+                      <button
+                        type="button"
+                        onClick={handleAddToCart}
+                        disabled={book.stock === 0}
+                        className="bg-editorial-primary text-white font-bold px-6 py-3 rounded-lg shadow hover:bg-editorial-secondary transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                      >
+                        {book.stock === 0 ? 'Sin stock disponible' : 'Agregar al carrito'}
+                      </button>
 
-                  <Link
-                    to="/cart"
-                    className="text-editorial-secondary font-semibold px-4 py-3 rounded-lg border border-editorial-secondary/30 hover:bg-editorial-secondary hover:text-white transition text-center"
-                  >
-                    Ir al carrito
-                  </Link>
+                      <Link
+                        to="/cart"
+                        className="text-editorial-secondary font-semibold px-4 py-3 rounded-lg border border-editorial-secondary/30 hover:bg-editorial-secondary hover:text-white transition text-center"
+                      >
+                        Ir al carrito
+                      </Link>
+                    </>
+                  ) : (
+                    <Link
+                      to="/login"
+                      className="bg-editorial-primary text-white font-bold px-6 py-3 rounded-lg shadow hover:bg-editorial-secondary transition text-center"
+                    >
+                      Inicia sesión para comprar
+                    </Link>
+                  )}
                 </div>
 
                 {feedback && (
