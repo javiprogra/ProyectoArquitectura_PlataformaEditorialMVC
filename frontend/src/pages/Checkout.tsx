@@ -19,6 +19,10 @@ interface CheckoutForm {
   deliveryMethod: string;
   paymentMethod: string;
   notes: string;
+  cardHolder: string;
+  cardNumber: string;
+  cardExpiry: string;
+  cardCvv: string;
 }
 
 export default function Checkout() {
@@ -41,7 +45,12 @@ export default function Checkout() {
     deliveryMethod: 'entrega_domicilio',
     paymentMethod: 'tarjeta',
     notes: '',
+    cardHolder: '',
+    cardNumber: '',
+    cardExpiry: '',
+    cardCvv: '',
   }));
+  const [paymentError, setPaymentError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -92,6 +101,15 @@ export default function Checkout() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!summary || items.length === 0) return;
+
+    setPaymentError('');
+    if (form.paymentMethod === 'tarjeta') {
+      const number = form.cardNumber.replace(/\s+/g, '');
+      if (!form.cardHolder.trim() || number.length < 13 || !/^\d{2}\/\d{2}$/.test(form.cardExpiry) || form.cardCvv.trim().length < 3) {
+        setPaymentError('Completa correctamente los datos de la tarjeta.');
+        return;
+      }
+    }
 
     setSubmitting(true);
 
@@ -348,6 +366,70 @@ export default function Checkout() {
                     <option value="efectivo">Pago contra entrega</option>
                   </select>
                 </div>
+
+                {form.paymentMethod === 'tarjeta' && (
+                  <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <h3 className="text-sm font-bold text-editorial-primary mb-3">Datos de la tarjeta</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Nombre del titular
+                        </label>
+                        <input
+                          type="text"
+                          value={form.cardHolder}
+                          onChange={(event) => updateField('cardHolder', event.target.value)}
+                          placeholder="Como aparece en la tarjeta"
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                          required={form.paymentMethod === 'tarjeta'}
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Número de tarjeta
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={19}
+                          value={form.cardNumber}
+                          onChange={(event) => updateField('cardNumber', event.target.value)}
+                          placeholder="1234 5678 9012 3456"
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                          required={form.paymentMethod === 'tarjeta'}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Fecha de expiración
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={5}
+                          value={form.cardExpiry}
+                          onChange={(event) => updateField('cardExpiry', event.target.value)}
+                          placeholder="MM/AA"
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                          required={form.paymentMethod === 'tarjeta'}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">CVV</label>
+                        <input
+                          type="password"
+                          inputMode="numeric"
+                          maxLength={4}
+                          value={form.cardCvv}
+                          onChange={(event) => updateField('cardCvv', event.target.value)}
+                          placeholder="123"
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                          required={form.paymentMethod === 'tarjeta'}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Observaciones de la orden
@@ -360,6 +442,11 @@ export default function Checkout() {
                     className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
                   />
                 </div>
+                {paymentError && (
+                  <div className="sm:col-span-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {paymentError}
+                  </div>
+                )}
               </div>
             </section>
 
