@@ -1,11 +1,13 @@
 // src/pages/Register.tsx
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Role } from '../services/mockService';
 import logoLumina from '../assets/logo.png';
 
 export default function Register() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,7 +20,7 @@ export default function Register() {
     // Aquí el backend debe procesar la contraseña de forma segura mediante hashing (Bcrypt/Argon2)[cite: 5]
     
     alert(`¡Cuenta creada con éxito para ${name} (${role})!`);
-    navigate('/login');
+    navigate(redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login');
   };
 
   return (
@@ -119,7 +121,10 @@ export default function Register() {
         <div className="mt-6 border-t border-gray-100 pt-4 text-center">
           <p className="text-xs text-gray-500">
             ¿Ya tienes una cuenta?{' '}
-            <Link to="/login" className="text-editorial-secondary font-bold hover:underline">
+            <Link
+              to={redirect ? `/login?redirect=${encodeURIComponent(redirect)}` : '/login'}
+              className="text-editorial-secondary font-bold hover:underline"
+            >
               Inicia sesión aquí
             </Link>
           </p>

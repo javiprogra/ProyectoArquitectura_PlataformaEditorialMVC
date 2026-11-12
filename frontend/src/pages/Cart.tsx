@@ -92,12 +92,12 @@ export default function Cart() {
           </Link>
         </div>
 
-        {!user && !emptyCart && (
-          <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Estás comprando como visitante. Si inicias sesión con una cuenta institucional
-            obtendrás el 8% de descuento adicional acumulativo.{' '}
-            <Link to="/login" className="font-bold underline">
-              Iniciar sesión
+        {user?.role === 'retail_client' && !emptyCart && (
+          <div className="mb-5 rounded-lg border border-editorial-accent/40 bg-editorial-beige/60 px-4 py-3 text-sm text-editorial-primary">
+            ¿Tu compra es para una institución? Si inicias sesión con una cuenta institucional
+            validada obtendrás el 8% de descuento adicional acumulativo.{' '}
+            <Link to="/login?redirect=%2Fcart" className="font-bold underline">
+              Cambiar de cuenta
             </Link>
           </div>
         )}

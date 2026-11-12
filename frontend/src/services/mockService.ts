@@ -20,11 +20,39 @@ export interface Book {
 
 export type Role = 'visitor' | 'retail_client' | 'institutional_client' | 'sales_advisor' | 'admin';
 
+export type UserStatus = 'activo' | 'inactivo';
+
+export type PaymentMethod = 'tarjeta' | 'contra_entrega' | 'credito_institucional';
+
 export interface User {
   id: number;
   name: string;
   email: string;
   role: Role;
+  status?: UserStatus;
+  /** Razón social de la cuenta institucional (RBAC) */
+  institution?: string;
+  /** NIT / documento fiscal institucional */
+  nit?: string;
+  /** Línea de crédito autorizada en quetzales (Q) para cuentas institucionales */
+  creditLine?: number;
+  /** Indica si el administrador ya validó la cuenta institucional */
+  validated?: boolean;
+  /** Credencial de acceso simulada (en el backend real se almacenará hasheada) */
+  credential?: string;
+}
+
+export interface CreditValidationResult {
+  approved: boolean;
+  authorizedLine: number;
+  availableLine: number;
+  message: string;
+}
+
+export interface PaymentResult {
+  approved: boolean;
+  reference: string;
+  message: string;
 }
 
 export interface CartLineInput {
@@ -68,6 +96,16 @@ export interface Order {
   totalFinal: number;
   status: OrderStatus;
   createdAt: string;
+  customerType?: 'minorista' | 'institucional';
+  customerNit?: string;
+  customerEmail?: string;
+  deliveryMethod?: string;
+  deliveryLabel?: string;
+  deliveryAddress?: string;
+  paymentMethod?: PaymentMethod;
+  paymentLabel?: string;
+  purchaseOrder?: string;
+  creditLineUsed?: number;
 }
 
 export type CustomOrderStatus = 'pendiente' | 'en_revision' | 'cotizada' | 'aprobada' | 'rechazada';
@@ -140,11 +178,42 @@ let mockBooks: Book[] = [
 
 // 2. Usuarios Simulados para los 5 Roles del Sistema[cite: 3]
 export const mockUsers: User[] = [
-  { id: 1, name: "Visitante Anónimo", email: "visitor@editorial.com", role: "visitor" },
-  { id: 2, name: "Juan Pérez (Cliente Minorista)", email: "juan@gmail.com", role: "retail_client" },
-  { id: 3, name: "Universidad Mesoamericana (Institucional)", email: "compras@umes.edu.gt", role: "institutional_client" },
-  { id: 4, name: "Lic. Sofía Asesor (Ventas)", email: "asesor@editorial.com", role: "sales_advisor" },
-  { id: 5, name: "Admin General", email: "admin@editorial.com", role: "admin" },
+  { id: 1, name: "Visitante Anónimo", email: "visitor@editorial.com", role: "visitor", status: "activo" },
+  { id: 2, name: "Juan Pérez", email: "juan@gmail.com", role: "retail_client", status: "activo" },
+  {
+    id: 3,
+    name: "Universidad Mesoamericana",
+    email: "compras@umes.edu.gt",
+    role: "institutional_client",
+    status: "activo",
+    institution: "Universidad Mesoamericana",
+    nit: "1023456-7",
+    creditLine: 50000,
+    validated: true,
+    credential: "umes2026",
+  },
+  { id: 4, name: "Lic. Sofía Asesor", email: "asesor@editorial.com", role: "sales_advisor", status: "activo", credential: "asesor2026" },
+  { id: 5, name: "Admin General", email: "admin@editorial.com", role: "admin", status: "activo", credential: "admin2026" },
+  {
+    id: 6,
+    name: "Colegio San José de los Altos",
+    email: "compras@csj.edu.gt",
+    role: "institutional_client",
+    status: "activo",
+    institution: "Colegio San José de los Altos",
+    nit: "5061234-9",
+    creditLine: 20000,
+    validated: false,
+    credential: "csj2026",
+  },
+  {
+    id: 7,
+    name: "Lic. Mario Estupe",
+    email: "mario.estupe@editorial.com",
+    role: "sales_advisor",
+    status: "inactivo",
+    credential: "mario2026",
+  },
 ];
 
 // 3. Solicitudes institucionales semilla (RF-04)
@@ -240,6 +309,7 @@ const nextBookId = (): number => Math.max(0, ...mockBooks.map((book) => book.id)
 const nextCustomOrderId = (): number => Math.max(0, ...mockCustomOrders.map((request) => request.id)) + 1;
 const nextQuoteId = (): number => Math.max(0, ...mockQuotes.map((quote) => quote.id)) + 1;
 const nextOrderId = (): number => Math.max(0, ...mockOrders.map((order) => order.id)) + 1;
+const nextUserId = (): number => Math.max(0, ...mockUsers.map((user) => user.id)) + 1;
 
 // Motor de descuentos compartido: volumen (1-5: 0%, 6-20: 5%, 21-50: 10%, >50: 15%)
 // y 8% adicional acumulativo para clientes institucionales.
@@ -326,6 +396,16 @@ export const mockService = {
     userRole: Role;
     userId: number;
     userName: string;
+    customerType?: 'minorista' | 'institucional';
+    customerNit?: string;
+    customerEmail?: string;
+    deliveryMethod?: string;
+    deliveryLabel?: string;
+    deliveryAddress?: string;
+    paymentMethod?: PaymentMethod;
+    paymentLabel?: string;
+    purchaseOrder?: string;
+    creditLineUsed?: number;
   }): Promise<Order> => {
     // TODO: Conectar con el Controlador/Backend → POST /api/orders
     await delay(400);
@@ -358,6 +438,16 @@ export const mockService = {
       totalFinal: summary.totalFinal,
       status: 'registrada',
       createdAt: new Date().toISOString(),
+      customerType: payload.customerType,
+      customerNit: payload.customerNit,
+      customerEmail: payload.customerEmail,
+      deliveryMethod: payload.deliveryMethod,
+      deliveryLabel: payload.deliveryLabel,
+      deliveryAddress: payload.deliveryAddress,
+      paymentMethod: payload.paymentMethod,
+      paymentLabel: payload.paymentLabel,
+      purchaseOrder: payload.purchaseOrder,
+      creditLineUsed: payload.creditLineUsed,
     };
 
     mockOrders.push(order);
@@ -368,6 +458,133 @@ export const mockService = {
     // TODO: Conectar con el Controlador/Backend → GET /api/orders
     await delay(200);
     return [...mockOrders];
+  },
+
+  // Pasarela de pago simulada (tarjeta / contra entrega / crédito institucional)
+  processPayment: async (payload: {
+    method: PaymentMethod;
+    amount: number;
+    reference?: string;
+  }): Promise<PaymentResult> => {
+    // TODO: Conectar con el Controlador/Backend → POST /api/payments
+    await delay(500);
+    const reference =
+      payload.reference ?? `PAY-${Date.now().toString().slice(-8)}`;
+
+    if (payload.amount <= 0) {
+      return {
+        approved: false,
+        reference,
+        message: 'El monto a pagar debe ser mayor a cero.',
+      };
+    }
+
+    return {
+      approved: true,
+      reference,
+      message:
+        payload.method === 'tarjeta'
+          ? 'Pago con tarjeta autorizado correctamente.'
+          : payload.method === 'credito_institucional'
+            ? 'Cargo a la línea de crédito institucional autorizado.'
+            : 'Orden registrada para pago contra entrega.',
+    };
+  },
+
+  // Valida la línea de crédito y orden de compra de una cuenta institucional
+  validateInstitutionalCredit: async (payload: {
+    userId: number;
+    amount: number;
+    purchaseOrder: string;
+  }): Promise<CreditValidationResult> => {
+    // TODO: Conectar con el Controlador/Backend → POST /api/institutional-credit/validate
+    await delay(450);
+    const account = mockUsers.find((candidate) => candidate.id === payload.userId);
+    const authorizedLine = account?.creditLine ?? 0;
+    const availableLine = Math.max(0, round2(authorizedLine - payload.amount));
+
+    if (!account || account.role !== 'institutional_client') {
+      return {
+        approved: false,
+        authorizedLine,
+        availableLine,
+        message: 'La cuenta no corresponde a un cliente institucional.',
+      };
+    }
+    if (!account.validated) {
+      return {
+        approved: false,
+        authorizedLine,
+        availableLine,
+        message: 'La cuenta institucional aún no ha sido validada por el administrador.',
+      };
+    }
+    if (!payload.purchaseOrder.trim()) {
+      return {
+        approved: false,
+        authorizedLine,
+        availableLine,
+        message: 'Debes ingresar el número de orden de compra.',
+      };
+    }
+    if (payload.amount > authorizedLine) {
+      return {
+        approved: false,
+        authorizedLine,
+        availableLine,
+        message: `El monto excede la línea de crédito autorizada (${authorizedLine.toFixed(2)}).`,
+      };
+    }
+
+    return {
+      approved: true,
+      authorizedLine,
+      availableLine,
+      message: 'Línea de crédito y orden de compra validadas correctamente.',
+    };
+  },
+
+  // RBAC: gestión de cuentas institucionales y asesores de ventas
+  getManagedUsers: async (): Promise<User[]> => {
+    // TODO: Conectar con el Controlador/Backend → GET /api/admin/users
+    await delay(250);
+    return mockUsers.filter(
+      (user) => user.role === 'institutional_client' || user.role === 'sales_advisor',
+    );
+  },
+
+  createManagedUser: async (payload: Omit<User, 'id'>): Promise<User> => {
+    // TODO: Conectar con el Controlador/Backend → POST /api/admin/users
+    await delay(300);
+    const user: User = { ...payload, id: nextUserId() };
+    mockUsers.push(user);
+    return user;
+  },
+
+  updateManagedUser: async (
+    id: number,
+    updates: Partial<Omit<User, 'id'>>,
+  ): Promise<User | null> => {
+    // TODO: Conectar con el Controlador/Backend → PUT /api/admin/users/:id
+    await delay(300);
+    const index = mockUsers.findIndex((user) => user.id === id);
+    if (index === -1) return null;
+    const updatedUser: User = { ...mockUsers[index], ...updates, id };
+    mockUsers[index] = updatedUser;
+    return updatedUser;
+  },
+
+  deleteManagedUser: async (id: number): Promise<boolean> => {
+    // TODO: Conectar con el Controlador/Backend → DELETE /api/admin/users/:id
+    await delay(300);
+    const index = mockUsers.findIndex(
+      (user) =>
+        user.id === id &&
+        (user.role === 'institutional_client' || user.role === 'sales_advisor'),
+    );
+    if (index === -1) return false;
+    mockUsers.splice(index, 1);
+    return true;
   },
 
   // CRUD Admin Simulado

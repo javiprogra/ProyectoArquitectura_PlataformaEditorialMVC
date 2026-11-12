@@ -4,9 +4,18 @@ import { Link } from 'react-router-dom';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
 import { OrderSummary } from '../components/OrderSummary';
+import { CardPaymentGateway, isCardDetailsValid } from '../components/CardPaymentGateway';
+import type { CardDetails } from '../components/CardPaymentGateway';
+import { ElectronicInvoice } from '../components/ElectronicInvoice';
 import { useCart } from '../context/CartContext';
 import { mockService } from '../services/mockService';
-import type { Book, Order, OrderCalculation } from '../services/mockService';
+import type {
+  Book,
+  CreditValidationResult,
+  Order,
+  OrderCalculation,
+  PaymentMethod,
+} from '../services/mockService';
 import { formatQ } from '../utils/format';
 import { getCurrentRole, getCurrentUser } from '../utils/session';
 
@@ -17,31 +26,89 @@ interface CheckoutForm {
   phone: string;
   address: string;
   deliveryMethod: string;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
+  purchaseOrder: string;
   notes: string;
 }
+
+const deliveryLabels: Record<string, string> = {
+  entrega_domicilio: 'Entrega a domicilio',
+  retiro_sede: 'Retiro en sede Quetzaltenango',
+  envio_institucional: 'Envío institucional consolidado',
+};
+
+const paymentLabels: Record<PaymentMethod, string> = {
+  tarjeta: 'Tarjeta de crédito / débito',
+  contra_entrega: 'Pago contra entrega',
+  credito_institucional: 'Crédito institucional',
+};
+
+const emptyCard: CardDetails = {
+  cardNumber: '',
+  cardHolder: '',
+  expiry: '',
+  cvv: '',
+};
 
 export default function Checkout() {
   const { items, clearCart } = useCart();
   const role = getCurrentRole();
   const user = getCurrentUser();
+  const isInstitutional = role === 'institutional_client';
 
   const [books, setBooks] = useState<Book[]>([]);
   const [summary, setSummary] = useState<OrderCalculation | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [order, setOrder] = useState<Order | null>(null);
+  const [cardDetails, setCardDetails] = useState<CardDetails>(emptyCard);
+  const [creditValidation, setCreditValidation] = useState<CreditValidationResult | null>(null);
+  const [creditValidating, setCreditValidating] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
   const [form, setForm] = useState<CheckoutForm>(() => ({
     fullName: user?.name ?? '',
     email: user?.email ?? '',
-    nit: '',
+    nit: user?.nit ?? '',
     phone: '',
     address: '',
     deliveryMethod: 'entrega_domicilio',
     paymentMethod: 'tarjeta',
+    purchaseOrder: '',
     notes: '',
   }));
+
+  const paymentOptions = useMemo<
+    Array<{ value: PaymentMethod; label: string; description: string }>
+  >(
+    () =>
+      isInstitutional
+        ? [
+            {
+              value: 'tarjeta',
+              label: 'Tarjeta de crédito / débito',
+              description: 'Pasarela validada con detección Visa / Mastercard.',
+            },
+            {
+              value: 'credito_institucional',
+              label: 'Crédito institucional',
+              description: 'Cargo a la línea de crédito autorizada con orden de compra.',
+            },
+          ]
+        : [
+            {
+              value: 'tarjeta',
+              label: 'Tarjeta de crédito / débito',
+              description: 'Pasarela validada con detección Visa / Mastercard.',
+            },
+            {
+              value: 'contra_entrega',
+              label: 'Pago contra entrega',
+              description: 'Paga en efectivo al recibir tu pedido en la sede o domicilio.',
+            },
+          ],
+    [isInstitutional],
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -76,6 +143,11 @@ export default function Checkout() {
     };
   }, [items, role]);
 
+  useEffect(() => {
+    setCreditValidation(null);
+    setPaymentError('');
+  }, [form.paymentMethod, form.purchaseOrder, summary?.totalFinal]);
+
   const detailedItems = useMemo(
     () =>
       items.flatMap((item) => {
@@ -85,22 +157,107 @@ export default function Checkout() {
     [items, books],
   );
 
-  const updateField = (field: keyof CheckoutForm, value: string) => {
+  const updateField = <K extends keyof CheckoutForm,>(field: K, value: CheckoutForm[K]) => {
     setForm((previous) => ({ ...previous, [field]: value }));
+  };
+
+  const handleValidateCredit = async () => {
+    if (!summary) return;
+    if (!form.purchaseOrder.trim()) {
+      setPaymentError('Ingresa el número de orden de compra para validar el crédito.');
+      return;
+    }
+
+    setPaymentError('');
+    setCreditValidating(true);
+    // TODO: Conectar con el Controlador/Backend → POST /api/institutional-credit/validate
+    const validation = await mockService.validateInstitutionalCredit({
+      userId: user?.id ?? 0,
+      amount: summary.totalFinal,
+      purchaseOrder: form.purchaseOrder.trim(),
+    });
+    setCreditValidation(validation);
+    setCreditValidating(false);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!summary || items.length === 0) return;
 
+    setPaymentError('');
     setSubmitting(true);
+
+    if (form.paymentMethod === 'tarjeta') {
+      if (!isCardDetailsValid(cardDetails)) {
+        setPaymentError('Revisa los datos de la tarjeta: número, titular, vencimiento y CVV.');
+        setSubmitting(false);
+        return;
+      }
+
+      const lastFour = cardDetails.cardNumber.replace(/\D/g, '').slice(-4);
+      // TODO: Conectar con el Controlador/Backend → POST /api/payments
+      const payment = await mockService.processPayment({
+        method: 'tarjeta',
+        amount: summary.totalFinal,
+        reference: `Tarjeta **** ${lastFour}`,
+      });
+
+      if (!payment.approved) {
+        setPaymentError(payment.message);
+        setSubmitting(false);
+        return;
+      }
+    } else if (form.paymentMethod === 'credito_institucional') {
+      if (!form.purchaseOrder.trim()) {
+        setPaymentError('Ingresa el número de orden de compra institucional.');
+        setSubmitting(false);
+        return;
+      }
+
+      // TODO: Conectar con el Controlador/Backend → POST /api/institutional-credit/validate
+      const validation = await mockService.validateInstitutionalCredit({
+        userId: user?.id ?? 0,
+        amount: summary.totalFinal,
+        purchaseOrder: form.purchaseOrder.trim(),
+      });
+      setCreditValidation(validation);
+
+      if (!validation.approved) {
+        setPaymentError(validation.message);
+        setSubmitting(false);
+        return;
+      }
+    } else {
+      // TODO: Conectar con el Controlador/Backend → POST /api/payments
+      const payment = await mockService.processPayment({
+        method: 'contra_entrega',
+        amount: summary.totalFinal,
+      });
+
+      if (!payment.approved) {
+        setPaymentError(payment.message);
+        setSubmitting(false);
+        return;
+      }
+    }
 
     // TODO: Conectar con el Controlador/Backend → POST /api/orders
     const createdOrder = await mockService.createOrder({
       items,
       userRole: role,
       userId: user?.id ?? 0,
-      userName: form.fullName || user?.name || 'Cliente invitado',
+      userName: form.fullName || user?.name || 'Cliente',
+      customerType: isInstitutional ? 'institucional' : 'minorista',
+      customerNit: form.nit,
+      customerEmail: form.email,
+      deliveryMethod: form.deliveryMethod,
+      deliveryLabel: deliveryLabels[form.deliveryMethod] ?? form.deliveryMethod,
+      deliveryAddress: form.address,
+      paymentMethod: form.paymentMethod,
+      paymentLabel: paymentLabels[form.paymentMethod],
+      purchaseOrder: form.purchaseOrder.trim() || undefined,
+      creditLineUsed:
+        form.paymentMethod === 'credito_institucional' ? summary.totalFinal : undefined,
     });
 
     setOrder(createdOrder);
@@ -109,83 +266,7 @@ export default function Checkout() {
   };
 
   if (order) {
-    return (
-      <div className="min-h-screen bg-editorial-light text-editorial-dark flex flex-col">
-        <EditorialHeader />
-        <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-16">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-8 md:p-10 text-center">
-            <div className="mx-auto h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center mb-5">
-              <span className="text-3xl font-bold text-emerald-700">✓</span>
-            </div>
-            <p className="text-xs uppercase tracking-widest font-bold text-editorial-secondary">
-              Orden registrada
-            </p>
-            <h1 className="text-3xl font-extrabold text-editorial-primary mt-2">
-              ¡Gracias por tu compra!
-            </h1>
-            <p className="text-gray-600 mt-2">
-              La orden{' '}
-              <span className="font-mono font-bold text-editorial-primary">
-                #{order.id.toString().padStart(6, '0')}
-              </span>{' '}
-              fue generada correctamente en modo demostración.
-            </p>
-
-            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-              <div className="rounded-lg bg-editorial-beige/60 p-4">
-                <p className="text-xs text-gray-500">Cliente</p>
-                <p className="font-semibold text-editorial-primary">{order.userName}</p>
-              </div>
-              <div className="rounded-lg bg-editorial-beige/60 p-4">
-                <p className="text-xs text-gray-500">Ítems</p>
-                <p className="font-semibold text-editorial-primary">
-                  {order.items.reduce((total, item) => total + item.quantity, 0)} unidades
-                </p>
-              </div>
-              <div className="rounded-lg bg-editorial-beige/60 p-4">
-                <p className="text-xs text-gray-500">Total final</p>
-                <p className="font-bold text-editorial-secondary">{formatQ(order.totalFinal)}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 text-left bg-gray-50 rounded-lg p-4">
-              <h2 className="font-bold text-editorial-primary mb-2 text-sm">Detalle de la orden</h2>
-              <ul className="divide-y divide-gray-200 text-sm">
-                {order.items.map((item) => (
-                  <li key={item.bookId} className="py-2 flex justify-between gap-4">
-                    <span>
-                      {item.quantity} × {item.title}
-                    </span>
-                    <span className="font-semibold">{formatQ(item.subtotal)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <p className="text-xs text-gray-500 mt-6">
-              TODO: Conectar con el Controlador/Backend para procesar el pago y enviar la
-              confirmación por correo.
-            </p>
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                to="/catalog"
-                className="bg-editorial-primary text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-editorial-secondary transition"
-              >
-                Volver al catálogo
-              </Link>
-              <Link
-                to="/"
-                className="border border-editorial-primary/30 text-editorial-primary font-semibold px-5 py-2.5 rounded-lg hover:bg-editorial-beige transition"
-              >
-                Ir al inicio
-              </Link>
-            </div>
-          </div>
-        </main>
-        <EditorialFooter />
-      </div>
-    );
+    return <ElectronicInvoice order={order} />;
   }
 
   if (items.length === 0) {
@@ -267,7 +348,7 @@ export default function Checkout() {
                     type="text"
                     value={form.nit}
                     onChange={(event) => updateField('nit', event.target.value)}
-                    placeholder="Opcional para minoristas"
+                    placeholder={isInstitutional ? 'NIT institucional' : 'Opcional para minoristas'}
                     className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
                   />
                 </div>
@@ -291,9 +372,9 @@ export default function Checkout() {
                     type="text"
                     readOnly
                     value={
-                      role === 'institutional_client'
+                      isInstitutional
                         ? 'Institucional · 8% de descuento adicional'
-                        : 'Minorista / Visitante · sin descuento adicional'
+                        : 'Minorista · sin descuento adicional'
                     }
                     className="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600"
                   />
@@ -319,7 +400,7 @@ export default function Checkout() {
                 Entrega y pago
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Método de entrega
                   </label>
@@ -333,21 +414,129 @@ export default function Checkout() {
                     <option value="envio_institucional">Envío institucional consolidado</option>
                   </select>
                 </div>
-                <div>
+
+                <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Método de pago
                   </label>
-                  <select
-                    value={form.paymentMethod}
-                    onChange={(event) => updateField('paymentMethod', event.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-editorial-primary focus:outline-none"
-                  >
-                    <option value="tarjeta">Tarjeta de crédito / débito</option>
-                    <option value="transferencia">Transferencia bancaria</option>
-                    <option value="credito_institucional">Crédito institucional</option>
-                    <option value="efectivo">Pago contra entrega</option>
-                  </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {paymentOptions.map((option) => {
+                      const selected = form.paymentMethod === option.value;
+                      return (
+                        <label
+                          key={option.value}
+                          className={`cursor-pointer rounded-xl border p-4 transition ${
+                            selected
+                              ? 'border-editorial-primary bg-editorial-beige/60 ring-1 ring-editorial-primary'
+                              : 'border-gray-200 hover:border-editorial-secondary/50'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="paymentMethod"
+                            value={option.value}
+                            checked={selected}
+                            onChange={() => updateField('paymentMethod', option.value)}
+                            className="sr-only"
+                          />
+                          <p className="text-sm font-bold text-editorial-primary">
+                            {option.label}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">{option.description}</p>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
+
+                {form.paymentMethod === 'tarjeta' && (
+                  <div className="sm:col-span-2">
+                    <CardPaymentGateway
+                      details={cardDetails}
+                      onChange={setCardDetails}
+                      amount={summary?.totalFinal ?? 0}
+                    />
+                  </div>
+                )}
+
+                {form.paymentMethod === 'credito_institucional' && (
+                  <div className="sm:col-span-2 rounded-xl border border-editorial-accent/40 bg-editorial-beige/40 p-4 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">
+                          Línea de crédito autorizada
+                        </p>
+                        <p className="text-2xl font-extrabold text-editorial-primary">
+                          {formatQ(user?.creditLine ?? 0)}
+                        </p>
+                      </div>
+                      <span className="self-start rounded-full border border-editorial-accent/50 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-editorial-primary">
+                        {user?.validated ? 'Cuenta validada' : 'Cuenta pendiente de validación'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Orden de compra *
+                        </label>
+                        <input
+                          type="text"
+                          value={form.purchaseOrder}
+                          onChange={(event) => updateField('purchaseOrder', event.target.value)}
+                          placeholder="Ej. OC-UMES-2026-045"
+                          className="w-full p-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-editorial-primary focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-700 mb-1">
+                          Monto a cargar
+                        </label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={summary ? formatQ(summary.totalFinal) : 'Calculando...'}
+                          className="w-full p-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleValidateCredit}
+                      disabled={creditValidating || !summary}
+                      className="w-full sm:w-auto bg-editorial-primary text-white font-semibold px-4 py-2.5 rounded-lg hover:bg-editorial-secondary transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {creditValidating ? 'Validando línea...' : 'Validar línea de crédito'}
+                    </button>
+
+                    {creditValidation && (
+                      <div
+                        className={`rounded-lg border px-4 py-3 text-sm ${
+                          creditValidation.approved
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                            : 'border-red-200 bg-red-50 text-red-700'
+                        }`}
+                      >
+                        <p className="font-semibold">{creditValidation.message}</p>
+                        <p className="text-xs mt-1">
+                          Línea disponible después del cargo:{' '}
+                          <span className="font-semibold">
+                            {formatQ(creditValidation.availableLine)}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {form.paymentMethod === 'contra_entrega' && (
+                  <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                    El pago contra entrega se realiza en efectivo al momento de recibir el pedido.
+                    Un asesor de LUMINA confirmará la disponibilidad y el horario de entrega.
+                  </div>
+                )}
+
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Observaciones de la orden
@@ -394,12 +583,17 @@ export default function Checkout() {
             <OrderSummary summary={summary} calculating={calculating} />
 
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 space-y-3">
+              {paymentError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {paymentError}
+                </div>
+              )}
               <button
                 type="submit"
                 disabled={submitting || calculating || !summary}
                 className="w-full bg-editorial-primary text-white font-bold px-5 py-3 rounded-lg shadow hover:bg-editorial-secondary transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {submitting ? 'Procesando orden...' : 'Confirmar y pagar'}
+                {submitting ? 'Procesando pago...' : 'Confirmar y pagar'}
               </button>
               <Link
                 to="/cart"
@@ -408,8 +602,8 @@ export default function Checkout() {
                 Volver al carrito
               </Link>
               <p className="text-[11px] text-gray-500 text-center leading-relaxed">
-                Al confirmar se registrará una orden simulada. La integración con la pasarela de
-                pago y el controlador de órdenes queda pendiente.
+                Al confirmar se generará el comprobante electrónico de la orden. La integración
+                definitiva con la pasarela de pago y el controlador de órdenes queda pendiente.
               </p>
             </div>
           </div>

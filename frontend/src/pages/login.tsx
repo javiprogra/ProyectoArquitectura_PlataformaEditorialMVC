@@ -1,11 +1,14 @@
 // src/pages/Login.tsx
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { mockUsers, Role } from '../services/mockService';
 import logoLumina from '../assets/logo.png';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = searchParams.get('redirect');
+  const reason = searchParams.get('reason');
   const [selectedRole, setSelectedRole] = useState<Role>('retail_client');
   const [email, setEmail] = useState('juan@gmail.com');
   const [password, setPassword] = useState('********');
@@ -30,7 +33,9 @@ export default function Login() {
     alert(`¡Sesión iniciada como: ${foundUser.name}!`);
 
     // Redirección inteligente por rol (RF-02)[cite: 3]
-    if (selectedRole === 'admin') {
+    if (redirect && foundUser.role !== 'visitor') {
+      navigate(redirect);
+    } else if (selectedRole === 'admin') {
       navigate('/admin/books');
     } else if (selectedRole === 'sales_advisor') {
       navigate('/advisor/quotes');
@@ -70,6 +75,19 @@ export default function Login() {
             className="h-20 w-auto object-contain my-2" 
           />
         </div>
+
+        {reason === 'purchase' && (
+          <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Debes iniciar sesión o crear una cuenta válida para comprar, agregar productos al
+            carrito o acceder al checkout.{' '}
+            <Link
+              to={redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'}
+              className="font-bold underline"
+            >
+              Crear cuenta
+            </Link>
+          </div>
+        )}
 
         {/* Formulario de Autenticación */}
         <form onSubmit={handleLogin} className="space-y-4">
@@ -122,7 +140,10 @@ export default function Login() {
 <div className="mt-6 border-t border-gray-100 pt-4 text-center">
   <p className="text-xs text-gray-500">
     ¿No tienes una cuenta?{' '}
-    <Link to="/register" className="text-editorial-primary font-bold hover:underline">
+    <Link
+      to={redirect ? `/register?redirect=${encodeURIComponent(redirect)}` : '/register'}
+      className="text-editorial-primary font-bold hover:underline"
+    >
       Crear cuenta
     </Link>
   </p>

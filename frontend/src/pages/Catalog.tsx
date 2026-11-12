@@ -1,6 +1,6 @@
 // src/pages/Catalog.tsx
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { mockService, Book } from '../services/mockService';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
@@ -8,6 +8,8 @@ import { EditorialFooter } from '../components/EditorialFooter';
 export default function Catalog() {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const institutionalAccessDenied = searchParams.get('access') === 'institutional';
   
   // Estados para los filtros (RF-01.2)
   const [search, setSearch] = useState('');
@@ -42,6 +44,18 @@ export default function Catalog() {
 
       {/* 3. RF-01.2: Panel de Búsqueda y Filtros Combinables */}
       <section className="max-w-7xl mx-auto px-4 py-8">
+        {institutionalAccessDenied && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            El módulo de solicitudes personalizadas y cotizaciones (RF-04) es exclusivo para
+            cuentas <span className="font-semibold">Institucionales / Mayoristas</span>. Inicia
+            sesión con una cuenta institucional validada o{' '}
+            <Link to="/register" className="font-bold underline">
+              crea una cuenta institucional
+            </Link>
+            .
+          </div>
+        )}
+
         <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           
           {/* Buscador por Título, Autor o ISBN */}

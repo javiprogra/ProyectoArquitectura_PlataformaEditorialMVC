@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
 import { StatusBadge } from '../components/StatusBadge';
+import { UserManagement } from '../components/UserManagement';
 import { mockService } from '../services/mockService';
 import type { Book } from '../services/mockService';
 import { formatQ } from '../utils/format';
@@ -38,6 +39,7 @@ export default function AdminPanel() {
   const user = getCurrentUser();
   const isAdmin = user?.role === 'admin';
 
+  const [activeTab, setActiveTab] = useState<'books' | 'users'>('books');
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -163,21 +165,47 @@ export default function AdminPanel() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
           <div>
             <p className="text-xs uppercase tracking-widest text-editorial-secondary font-bold">
-              RF-05 · Administración
+              Administración
             </p>
             <h1 className="text-3xl font-extrabold text-editorial-primary">
-              Control comercial del catálogo
+              {activeTab === 'books'
+                ? 'Control comercial del catálogo'
+                : 'Administración de usuarios y roles'}
             </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Crea, actualiza y elimina publicaciones, además de ajustar el stock disponible.
-            </p>
           </div>
+          {activeTab === 'books' && (
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="bg-editorial-primary text-white font-semibold px-5 py-2.5 rounded-lg shadow hover:bg-editorial-secondary transition"
+            >
+              + Nueva publicación
+            </button>
+          )}
+        </div>
+
+        <div className="mb-6 flex flex-wrap gap-2 border-b border-gray-200">
           <button
             type="button"
-            onClick={openCreateModal}
-            className="bg-editorial-primary text-white font-semibold px-5 py-2.5 rounded-lg shadow hover:bg-editorial-secondary transition"
+            onClick={() => setActiveTab('books')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeTab === 'books'
+                ? 'border-editorial-primary text-editorial-primary'
+                : 'border-transparent text-gray-500 hover:text-editorial-primary'
+            }`}
           >
-            + Nueva publicación
+            Catálogo
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition ${
+              activeTab === 'users'
+                ? 'border-editorial-primary text-editorial-primary'
+                : 'border-transparent text-gray-500 hover:text-editorial-primary'
+            }`}
+          >
+            Gestión de Usuarios
           </button>
         </div>
 
@@ -189,7 +217,7 @@ export default function AdminPanel() {
           </div>
         )}
 
-        {notice && (
+        {activeTab === 'books' && notice && (
           <div
             className={`mb-6 rounded-lg border px-4 py-3 text-sm ${
               notice.type === 'success'
@@ -201,7 +229,11 @@ export default function AdminPanel() {
           </div>
         )}
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        <section
+          className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8 ${
+            activeTab === 'books' ? '' : 'hidden'
+          }`}
+        >
           {[
             { label: 'Títulos activos', value: stats.totalTitles.toString(), detail: 'en catálogo' },
             {
@@ -231,7 +263,11 @@ export default function AdminPanel() {
           ))}
         </section>
 
-        <section className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <section
+          className={`bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden ${
+            activeTab === 'books' ? '' : 'hidden'
+          }`}
+        >
           <div className="px-5 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h2 className="font-bold text-editorial-primary">Catálogo administrable</h2>
             <div className="w-full sm:w-80">
@@ -356,9 +392,11 @@ export default function AdminPanel() {
             </div>
           )}
         </section>
+
+        {activeTab === 'users' && <UserManagement />}
       </main>
 
-      {modalOpen && (
+      {modalOpen && activeTab === 'books' && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 px-4 py-8 overflow-y-auto">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

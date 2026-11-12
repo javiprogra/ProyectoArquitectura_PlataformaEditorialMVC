@@ -25,12 +25,30 @@ export function EditorialHeader() {
   const isAdmin = pathname.startsWith('/admin');
   const isAdvisor = pathname.startsWith('/advisor');
 
+  const isVisitor = !user || user.role === 'visitor';
+
   const navItems: NavItem[] = [
     { to: '/', label: 'Inicio', active: pathname === '/' },
     { to: '/catalog', label: 'Catálogo', active: isCatalog },
-    { to: '/custom-order', label: 'Cotizaciones', active: isCustomOrder },
     { to: '/cart', label: 'Carrito', active: isCart, badge: totalItems },
   ];
+
+  if (user?.role === 'institutional_client') {
+    navItems.splice(2, 0, {
+      to: '/custom-order',
+      label: 'Cotizaciones',
+      active: isCustomOrder,
+    });
+  }
+
+  if (isVisitor) {
+    const cartItem = navItems.find((item) => item.to === '/cart');
+    if (cartItem) {
+      cartItem.to = '/login?reason=purchase&redirect=%2Fcart';
+      cartItem.active = false;
+      cartItem.badge = undefined;
+    }
+  }
 
   if (user?.role === 'admin') {
     navItems.push({ to: '/admin/books', label: 'Administración', active: isAdmin });

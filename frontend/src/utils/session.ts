@@ -28,6 +28,15 @@ export const getCurrentRole = (): Role => getCurrentUser()?.role ?? 'visitor';
 
 export const isInstitutionalClient = (): boolean => getCurrentRole() === 'institutional_client';
 
+export const isVisitor = (): boolean => {
+  const user = getCurrentUser();
+  return !user || user.role === 'visitor';
+};
+
+export const canPurchase = (): boolean => !isVisitor();
+
+export const canRequestQuotes = (): boolean => getCurrentRole() === 'institutional_client';
+
 export const clearSession = (): void => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');

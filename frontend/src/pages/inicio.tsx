@@ -4,10 +4,13 @@ import { Link } from 'react-router-dom';
 import { mockService, Book } from '../services/mockService';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
+import { getCurrentUser } from '../utils/session';
 
 export default function Inicio() {
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
+  const user = getCurrentUser();
+  const canRequestQuotes = user?.role === 'institutional_client';
 
   useEffect(() => {
     // Simulamos la carga de publicaciones destacadas desde el servicio
@@ -38,12 +41,14 @@ export default function Inicio() {
             >
               Explorar Catálogo
             </Link>
-            <Link 
-              to="/custom-order" 
-              className="bg-transparent border-2 border-white text-white font-bold px-6 py-3 rounded-lg hover:bg-white hover:text-editorial-primary transition"
-            >
-              Solicitar Cotización Mayorista
-            </Link>
+            {canRequestQuotes && (
+              <Link
+                to="/custom-order"
+                className="bg-transparent border-2 border-white text-white font-bold px-6 py-3 rounded-lg hover:bg-white hover:text-editorial-primary transition"
+              >
+                Solicitar Cotización Mayorista
+              </Link>
+            )}
           </div>
         </div>
       </section>

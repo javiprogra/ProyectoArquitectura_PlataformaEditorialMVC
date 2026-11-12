@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { EditorialHeader } from '../components/EditorialHeader';
 import { EditorialFooter } from '../components/EditorialFooter';
 import { StatusBadge } from '../components/StatusBadge';
@@ -7,11 +7,14 @@ import { useCart } from '../context/CartContext';
 import { mockService } from '../services/mockService';
 import type { Book } from '../services/mockService';
 import { formatQ } from '../utils/format';
+import { getCurrentRole } from '../utils/session';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const bookId = Number(id);
   const { addItem } = useCart();
+  const navigate = useNavigate();
+  const isVisitor = getCurrentRole() === 'visitor';
 
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,6 +69,13 @@ export default function BookDetail() {
 
   const handleAddToCart = () => {
     if (!book || book.stock === 0) return;
+
+    if (isVisitor) {
+      const redirect = encodeURIComponent(`/books/${book.id}`);
+      navigate(`/login?reason=purchase&redirect=${redirect}`);
+      return;
+    }
+
     const safeQuantity = Math.min(quantity, book.stock);
     addItem(book.id, safeQuantity);
     setFeedback(`Se agregaron ${safeQuantity} unidad(es) de "${book.title}" al carrito.`);
@@ -239,11 +249,19 @@ export default function BookDetail() {
                     disabled={book.stock === 0}
                     className="bg-editorial-primary text-white font-bold px-6 py-3 rounded-lg shadow hover:bg-editorial-secondary transition disabled:bg-gray-400 disabled:cursor-not-allowed"
                   >
-                    {book.stock === 0 ? 'Sin stock disponible' : 'Agregar al carrito'}
+                    {book.stock === 0
+                      ? 'Sin stock disponible'
+                      : isVisitor
+                        ? 'Iniciar sesión para comprar'
+                        : 'Agregar al carrito'}
                   </button>
 
                   <Link
-                    to="/cart"
+                    to={
+                      isVisitor
+                        ? '/login?reason=purchase&redirect=%2Fcart'
+                        : '/cart'
+                    }
                     className="text-editorial-secondary font-semibold px-4 py-3 rounded-lg border border-editorial-secondary/30 hover:bg-editorial-secondary hover:text-white transition text-center"
                   >
                     Ir al carrito
