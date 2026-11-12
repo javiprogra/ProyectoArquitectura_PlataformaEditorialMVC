@@ -96,10 +96,6 @@ basada en el patrón **Modelo-Vista-Controlador (MVC)**.
 | `models/migrations/` | Generas y versionas las migraciones del esquema. |
 | `config/database.ts` | Mantienes el `DataSource` (conexión a PostgreSQL/Supabase). |
 
-**Reglas:**
-- El esquema se cambia **solo con migraciones** (`typeorm migration:run`) o con los scripts de `db/`, nunca a mano en el SQL Editor.
-- El Controlador consume tus `services`, pero nadie más modifica `models/`.
-
 ---
 
 ### Pablo → **Controlador**
